@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f5f">
+  <meta name="description" content="Drei kurze Lesespiele für die Förderung des Sichtwortschatzes in Klasse 3.">
+  <title>Wortblitz</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23173f5f'/%3E%3Cpath d='M36 5 15 36h15l-3 23 22-34H34z' fill='%23ffd166'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" id="homeButton" type="button" aria-label="Zur Startseite">
+        <span class="brand-mark" aria-hidden="true">⚡</span>
+        <span>Wortblitz</span>
+      </button>
+      <div class="top-actions">
+        <div class="session-score" aria-label="Heute gesammelte Sterne">
+          <span aria-hidden="true">★</span>
+          <strong id="starCount">0</strong>
+        </div>
+        <button class="icon-button" id="soundButton" type="button" aria-label="Ton ausschalten" aria-pressed="true">🔊</button>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1">
+      <section class="screen home-screen" data-screen="home">
+        <div class="welcome-row">
+          <div>
+            <p class="eyebrow">Lesetraining · Klasse 3</p>
+            <h1>Wähle ein Spiel</h1>
+          </div>
+          <div class="today-card" aria-label="Heutiger Fortschritt">
+            <span>Heute geschafft</span>
+            <strong><span id="todayCorrect">0</span> Wörter</strong>
+          </div>
+        </div>
+
+        <div class="game-grid">
+          <button class="game-card game-card--flash" type="button" data-open-game="flash">
+            <span class="game-icon" aria-hidden="true">⚡</span>
+            <span class="game-copy">
+              <strong>Blitzwort</strong>
+              <small>Merken, finden, Zeit knacken</small>
+            </span>
+            <span class="card-arrow" aria-hidden="true">›</span>
+          </button>
+
+          <button class="game-card game-card--chain" type="button" data-open-game="chain">
+            <span class="game-icon" aria-hidden="true">⛓</span>
+            <span class="game-copy">
+              <strong>Lesekette</strong>
+              <small>Gleiche Wörter verbinden</small>
+            </span>
+            <span class="card-arrow" aria-hidden="true">›</span>
+          </button>
+
+          <button class="game-card game-card--real" type="button" data-open-game="real">
+            <span class="game-icon" aria-hidden="true">?</span>
+            <span class="game-copy">
+              <strong>Richtig oder erfunden?</strong>
+              <small>Echte Wörter erkennen</small>
+            </span>
+            <span class="card-arrow" aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <p class="privacy-note">Ohne Anmeldung · Ergebnisse bleiben auf diesem Gerät</p>
+      </section>
+
+      <section class="screen setup-screen" data-screen="flash-setup" hidden>
+        <button class="back-button" type="button" data-back-home>‹ Zurück</button>
+        <div class="setup-card">
+          <div class="round-icon round-icon--flash" aria-hidden="true">⚡</div>
+          <p class="eyebrow">Blitzwort</p>
+          <h1>Wie lange soll das Wort zu sehen sein?</h1>
+          <p class="setup-hint">Nach dem Blitzwort findest du es zwischen vier ähnlichen Wörtern. Deine Suchzeit wird angezeigt.</p>
+          <div class="level-list" role="radiogroup" aria-label="Anzeigedauer">
+            <button class="level-button" type="button" data-flash-speed="1400"><strong>Ruhig</strong><span>1,4 Sekunden</span></button>
+            <button class="level-button selected" type="button" data-flash-speed="900"><strong>Flott</strong><span>0,9 Sekunden</span></button>
+            <button class="level-button" type="button" data-flash-speed="550"><strong>Blitzschnell</strong><span>0,55 Sekunden</span></button>
+          </div>
+          <button class="primary-button" id="startFlash" type="button">Runde starten</button>
+        </div>
+      </section>
+
+      <section class="screen play-screen" data-screen="flash-play" hidden>
+        <div class="play-header">
+          <button class="close-button" type="button" data-back-home aria-label="Spiel beenden">×</button>
+          <div class="progress-wrap">
+            <span id="flashRoundLabel">Wort 1 von 10</span>
+            <div class="progress-track"><span id="flashProgress"></span></div>
+          </div>
+          <div class="mini-score"><span aria-hidden="true">★</span><strong id="flashScore">0</strong></div>
+        </div>
+        <div class="flash-stage" id="flashStage">
+          <p class="instruction" id="flashInstruction">Mach dich bereit …</p>
+          <div class="flash-word" id="flashWord" aria-live="polite">3</div>
+          <div class="choice-grid" id="flashChoices" hidden></div>
+          <div class="time-result" id="flashTime" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="screen play-screen" data-screen="chain-play" hidden>
+        <div class="play-header">
+          <button class="close-button" type="button" data-back-home aria-label="Spiel beenden">×</button>
+          <div class="progress-wrap">
+            <span id="chainRoundLabel">Glied 1 von 10</span>
+            <div class="progress-track progress-track--chain"><span id="chainProgress"></span></div>
+          </div>
+          <div class="mini-score"><span aria-hidden="true">★</span><strong id="chainScore">0</strong></div>
+        </div>
+        <div class="chain-stage">
+          <p class="instruction">Finde genau dasselbe Wort.</p>
+          <div class="target-word" id="chainTarget">plötzlich</div>
+          <div class="chain-visual" id="chainVisual" aria-label="Deine Lesekette"></div>
+          <div class="choice-grid choice-grid--chain" id="chainChoices"></div>
+          <div class="feedback-line" id="chainFeedback" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="screen play-screen" data-screen="real-play" hidden>
+        <div class="play-header">
+          <button class="close-button" type="button" data-back-home aria-label="Spiel beenden">×</button>
+          <div class="progress-wrap">
+            <span id="realRoundLabel">Wort 1 von 12</span>
+            <div class="progress-track progress-track--real"><span id="realProgress"></span></div>
+          </div>
+          <div class="mini-score"><span aria-hidden="true">★</span><strong id="realScore">0</strong></div>
+        </div>
+        <div class="real-stage">
+          <p class="instruction">Gibt es dieses Wort wirklich?</p>
+          <div class="judge-word" id="judgeWord">Abenteuer</div>
+          <div class="judge-actions">
+            <button class="judge-button judge-button--real" id="answerReal" type="button"><span aria-hidden="true">✓</span><strong>Richtig</strong><small>Das Wort gibt es.</small></button>
+            <button class="judge-button judge-button--made" id="answerMade" type="button"><span aria-hidden="true">✦</span><strong>Erfunden</strong><small>Das Wort gibt es nicht.</small></button>
+          </div>
+          <div class="feedback-line" id="realFeedback" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="screen result-screen" data-screen="result" hidden>
+        <div class="result-card">
+          <div class="result-burst" aria-hidden="true">★</div>
+          <p class="eyebrow" id="resultGame">Runde geschafft</p>
+          <h1 id="resultTitle">Prima gelesen!</h1>
+          <div class="result-number"><strong id="resultScore">9</strong><span id="resultTotal">von 10 richtig</span></div>
+          <div class="speed-summary" id="speedSummary" hidden>
+            <div><span>Ø Suchzeit</span><strong id="averageTime">1,4 s</strong></div>
+            <div><span>Schnellstes Wort</span><strong id="bestTime">0,8 s</strong></div>
+          </div>
+          <div class="result-actions">
+            <button class="primary-button" id="playAgain" type="button">Noch einmal</button>
+            <button class="secondary-button" type="button" data-back-home>Anderes Spiel</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
