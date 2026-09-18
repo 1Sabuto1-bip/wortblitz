@@ -175,8 +175,9 @@ function nextFlash() {
   state.current = sample(WORDS, 1)[0];
   updateRound("flash", TOTALS.flash);
   $("#flashInstruction").textContent = "Mach dich bereit …";
+  $("#flashWord").classList.remove("is-hidden");
+  $("#flashWord").removeAttribute("aria-hidden");
   $("#flashWord").textContent = "•";
-  $("#flashWord").hidden = false;
   $("#flashChoices").hidden = true;
   $("#flashChoices").replaceChildren();
   $("#flashTime").textContent = "";
@@ -186,13 +187,21 @@ function nextFlash() {
     $("#flashInstruction").textContent = "Merke dir das Wort!";
     $("#flashWord").textContent = state.current;
     later(() => {
-      $("#flashWord").hidden = true;
+      // Das Blitzwort vor der Auswahl vollständig aus dem Dokument entfernen.
+      // Die zusätzliche Klasse ist absichtlich unabhängig vom HTML-hidden-Attribut,
+      // weil ältere Safari/WebView-Versionen display:grid sonst sichtbar lassen können.
+      $("#flashWord").textContent = "";
+      $("#flashWord").classList.add("is-hidden");
+      $("#flashWord").setAttribute("aria-hidden", "true");
       $("#flashInstruction").textContent = "Wo ist das Blitzwort?";
       const choices = shuffle([state.current, ...distractorsFor(state.current, 3)]);
       choices.forEach((word) => $("#flashChoices").append(createChoiceButton(word, answerFlash)));
-      $("#flashChoices").hidden = false;
-      state.searchStarted = performance.now();
-      state.locked = false;
+      // Ein kurzer leerer Moment trennt das Merken klar vom Wiedererkennen.
+      later(() => {
+        $("#flashChoices").hidden = false;
+        state.searchStarted = performance.now();
+        state.locked = false;
+      }, 180);
     }, state.flashSpeed);
   }, 650);
 }
