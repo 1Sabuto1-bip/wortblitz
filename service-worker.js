@@ -1,4 +1,4 @@
-const CACHE_NAME = "wortblitz-v2";
+const CACHE_NAME = "wortblitz-v3";
 const APP_FILES = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./icons/icon.svg"];
 
 self.addEventListener("install", (event) => {

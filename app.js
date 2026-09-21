@@ -18,7 +18,23 @@ const MADE_UP = [
   "Glimmerich", "Haufel", "Raschung", "Flüsterling", "Klunkern", "Wuseligkeit", "Tromsel", "Hellerich", "Drübenheit", "Schlüsselung"
 ];
 
-const TOTALS = { flash: 10, chain: 10, real: 12 };
+const SENTENCES = [
+  "Heute scheint die Sonne besonders warm.",
+  "Der kleine Hund wartet geduldig vor seiner Tür.",
+  "Mia findet einen bunten Stein im Garten.",
+  "Nach der Pause lesen wir eine Geschichte.",
+  "Plötzlich klopft jemand laut an die Tür.",
+  "Unser Ausflug beginnt morgen nach dem Frühstück.",
+  "Im Winter tragen viele Kinder warme Jacken.",
+  "Auf dem Schulhof wächst ein großer Baum.",
+  "Jonas versteckt den Schlüssel unter seiner Tasche.",
+  "Die Freunde bauen gemeinsam eine lange Brücke.",
+  "Abends leuchten viele Sterne über unserem Haus.",
+  "Vielleicht finden wir später einen geheimen Weg.",
+  "Das Wasser fließt schnell zwischen den Steinen."
+];
+
+const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5 };
 const screens = [...document.querySelectorAll("[data-screen]")];
 const state = {
   sound: localStorage.getItem("wortblitz-sound") !== "off",
@@ -29,8 +45,18 @@ const state = {
   current: null,
   searchStarted: 0,
   times: [],
+  flashWords: [],
   chainWords: [],
   realItems: [],
+  sentenceSet: [],
+  sentenceIndex: 0,
+  sentenceWordIndex: 0,
+  sentenceWordScore: 0,
+  sentenceTotalWords: 0,
+  sentenceFirstTry: 0,
+  sentenceAttempts: 0,
+  sentenceBank: [],
+  sentenceBuilt: [],
   locked: false
 };
 
@@ -156,15 +182,30 @@ function distractorsFor(word, count) {
   return sample(pool, count);
 }
 
+function sentenceDistractorsFor(token, count) {
+  const punctuation = token.match(/[.!?]$/)?.[0] || "";
+  const plain = token.replace(/[.!?]$/, "");
+  const startsUppercase = plain.charAt(0) === plain.charAt(0).toUpperCase();
+  const normalized = plain.toLowerCase();
+  const available = WORDS.filter((candidate) => candidate.toLowerCase() !== normalized);
+  const similar = available.filter((candidate) => Math.abs(candidate.length - plain.length) <= 2);
+  const candidates = sample(similar.length >= count ? similar : available, count);
+  return candidates.map((candidate) => {
+    const adjusted = startsUppercase ? candidate.charAt(0).toUpperCase() + candidate.slice(1) : candidate.toLowerCase();
+    return `${adjusted}${punctuation}`;
+  });
+}
+
 function openGame(game) {
   state.game = game;
   if (game === "flash") showScreen("flash-setup");
   if (game === "chain") startChain();
   if (game === "real") startReal();
+  if (game === "sentence") startSentence();
 }
 
 function startFlash() {
-  Object.assign(state, { game: "flash", index: 0, score: 0, times: [], locked: false });
+  Object.assign(state, { game: "flash", index: 0, score: 0, times: [], flashWords: sample(WORDS, TOTALS.flash), locked: false });
   showScreen("flash-play");
   nextFlash();
 }
@@ -172,7 +213,7 @@ function startFlash() {
 function nextFlash() {
   if (state.index >= TOTALS.flash) return finishGame("flash");
   state.locked = true;
-  state.current = sample(WORDS, 1)[0];
+  state.current = state.flashWords[state.index];
   updateRound("flash", TOTALS.flash);
   $("#flashInstruction").textContent = "Mach dich bereit …";
   $("#flashWord").classList.remove("is-hidden");
@@ -322,19 +363,199 @@ function answerReal(answer) {
   later(nextReal, 1200);
 }
 
+function startSentence() {
+  const sentenceSet = sample(SENTENCES, TOTALS.sentence);
+  const sentenceTotalWords = sentenceSet.reduce((total, sentence) => total + sentence.split(" ").length, 0);
+  Object.assign(state, {
+    game: "sentence",
+    sentenceSet,
+    sentenceIndex: 0,
+    sentenceWordIndex: 0,
+    sentenceWordScore: 0,
+    sentenceTotalWords,
+    sentenceFirstTry: 0,
+    sentenceAttempts: 0,
+    sentenceBank: [],
+    sentenceBuilt: [],
+    locked: false
+  });
+  showScreen("sentence-play");
+  nextSentenceWord();
+}
+
+function currentSentenceTokens() {
+  return state.sentenceSet[state.sentenceIndex].split(" ");
+}
+
+function updateSentenceHeader() {
+  const tokens = currentSentenceTokens();
+  const wordNumber = Math.min(state.sentenceWordIndex + 1, tokens.length);
+  const progress = ((state.sentenceIndex + Math.min(state.sentenceWordIndex / tokens.length, 1)) / TOTALS.sentence) * 100;
+  $("#sentenceRoundLabel").textContent = `Satz ${state.sentenceIndex + 1} von ${TOTALS.sentence} · Wort ${wordNumber} von ${tokens.length}`;
+  $("#sentenceCounter").textContent = `Wort ${wordNumber} von ${tokens.length}`;
+  $("#sentenceProgress").style.width = `${progress}%`;
+  $("#sentenceScore").textContent = state.sentenceWordScore;
+}
+
+function nextSentenceWord() {
+  if (state.sentenceIndex >= TOTALS.sentence) return finishGame("sentence");
+  const tokens = currentSentenceTokens();
+  if (state.sentenceWordIndex >= tokens.length) return startSentenceOrdering();
+
+  state.locked = true;
+  state.current = tokens[state.sentenceWordIndex];
+  updateSentenceHeader();
+  $("#sentenceOrderStage").hidden = true;
+  $("#sentenceRecognitionStage").hidden = false;
+  $("#sentenceInstruction").textContent = "Mach dich bereit …";
+  $("#sentenceWord").classList.remove("is-hidden");
+  $("#sentenceWord").removeAttribute("aria-hidden");
+  $("#sentenceWord").textContent = "•";
+  $("#sentenceChoices").hidden = true;
+  $("#sentenceChoices").replaceChildren();
+  $("#sentenceFeedback").textContent = "";
+  $("#sentenceFeedback").className = "feedback-line";
+
+  later(() => {
+    $("#sentenceInstruction").textContent = "Merke dir das Wort!";
+    $("#sentenceWord").textContent = state.current;
+    later(() => {
+      $("#sentenceWord").textContent = "";
+      $("#sentenceWord").classList.add("is-hidden");
+      $("#sentenceWord").setAttribute("aria-hidden", "true");
+      $("#sentenceInstruction").textContent = "Welches Wort hast du gesehen?";
+      const choices = shuffle([state.current, ...sentenceDistractorsFor(state.current, 3)]);
+      choices.forEach((word) => $("#sentenceChoices").append(createChoiceButton(word, answerSentenceWord)));
+      later(() => {
+        $("#sentenceChoices").hidden = false;
+        state.locked = false;
+      }, 180);
+    }, 1100);
+  }, 600);
+}
+
+function answerSentenceWord(button, word) {
+  if (state.locked) return;
+  state.locked = true;
+  const isCorrect = word === state.current;
+  if (isCorrect) {
+    button.classList.add("correct");
+    state.sentenceWordScore += 1;
+    addCorrect();
+    beep(true);
+    $("#sentenceFeedback").textContent = "Richtig erkannt!";
+    $("#sentenceFeedback").className = "feedback-line good";
+  } else {
+    button.classList.add("wrong");
+    const correct = [...$("#sentenceChoices").children].find((item) => item.textContent === state.current);
+    if (correct) correct.classList.add("correct");
+    beep(false);
+    $("#sentenceFeedback").textContent = `Das Wort war „${state.current}“.`;
+    $("#sentenceFeedback").className = "feedback-line try";
+  }
+  $("#sentenceScore").textContent = state.sentenceWordScore;
+  state.sentenceWordIndex += 1;
+  later(nextSentenceWord, 1050);
+}
+
+function startSentenceOrdering() {
+  const tokens = currentSentenceTokens();
+  state.locked = false;
+  state.sentenceAttempts = 0;
+  state.sentenceBuilt = [];
+  state.sentenceBank = shuffle(tokens.map((word, id) => ({ id, word })));
+  updateSentenceHeader();
+  $("#sentenceRecognitionStage").hidden = true;
+  $("#sentenceOrderStage").hidden = false;
+  $("#sentenceOrderStage").classList.remove("is-correct");
+  $("#sentenceOrderFeedback").textContent = "";
+  $("#sentenceOrderFeedback").className = "feedback-line";
+  renderSentenceOrder();
+}
+
+function makeSentenceChip(item, fromBank) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "sentence-chip";
+  button.textContent = item.word;
+  button.setAttribute("aria-label", fromBank ? `${item.word} in den Satz setzen` : `${item.word} zurücklegen`);
+  button.addEventListener("click", () => moveSentenceWord(item.id, fromBank));
+  return button;
+}
+
+function renderSentenceOrder() {
+  const build = $("#sentenceBuild");
+  const bank = $("#sentenceBank");
+  build.replaceChildren();
+  bank.replaceChildren();
+  state.sentenceBuilt.forEach((item) => build.append(makeSentenceChip(item, false)));
+  state.sentenceBank.forEach((item) => bank.append(makeSentenceChip(item, true)));
+  $("#checkSentence").disabled = state.sentenceBank.length !== 0 || state.locked;
+}
+
+function moveSentenceWord(id, fromBank) {
+  if (state.locked) return;
+  const source = fromBank ? state.sentenceBank : state.sentenceBuilt;
+  const destination = fromBank ? state.sentenceBuilt : state.sentenceBank;
+  const index = source.findIndex((item) => item.id === id);
+  if (index < 0) return;
+  destination.push(source.splice(index, 1)[0]);
+  $("#sentenceOrderFeedback").textContent = "";
+  renderSentenceOrder();
+}
+
+function checkSentenceOrder() {
+  if (state.locked || state.sentenceBank.length !== 0) return;
+  const isCorrect = state.sentenceBuilt.every((item, index) => item.id === index);
+  if (isCorrect) {
+    state.locked = true;
+    if (state.sentenceAttempts === 0) state.sentenceFirstTry += 1;
+    stats.stars += 2;
+    saveStats();
+    beep(true);
+    $("#sentenceOrderStage").classList.add("is-correct");
+    $("#sentenceOrderFeedback").textContent = state.sentenceSet[state.sentenceIndex];
+    $("#sentenceOrderFeedback").className = "feedback-line good";
+    renderSentenceOrder();
+    state.sentenceIndex += 1;
+    state.sentenceWordIndex = 0;
+    later(nextSentenceWord, 1500);
+    return;
+  }
+
+  state.locked = true;
+  state.sentenceAttempts += 1;
+  beep(false);
+  $("#sentenceOrderFeedback").textContent = "Noch nicht ganz. Versuche es noch einmal.";
+  $("#sentenceOrderFeedback").className = "feedback-line try";
+  renderSentenceOrder();
+  later(() => {
+    state.sentenceBank = shuffle([...state.sentenceBuilt]);
+    state.sentenceBuilt = [];
+    state.locked = false;
+    renderSentenceOrder();
+  }, 1000);
+}
+
 function finishGame(game) {
-  const total = TOTALS[game];
-  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?" };
+  const total = game === "sentence" ? state.sentenceTotalWords : TOTALS[game];
+  const score = game === "sentence" ? state.sentenceWordScore : state.score;
+  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz" };
   $("#resultGame").textContent = `${titles[game]} geschafft`;
-  $("#resultTitle").textContent = state.score === total ? "Starke Runde!" : state.score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
-  $("#resultScore").textContent = state.score;
+  $("#resultTitle").textContent = score === total ? "Starke Runde!" : score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
+  $("#resultScore").textContent = score;
   $("#resultTotal").textContent = `von ${total} richtig`;
   $("#speedSummary").hidden = game !== "flash";
+  $("#sentenceSummary").hidden = game !== "sentence";
   if (game === "flash") {
     const average = state.times.length ? state.times.reduce((sum, time) => sum + time, 0) / state.times.length : 0;
     const best = state.times.length ? Math.min(...state.times) : 0;
     $("#averageTime").textContent = average ? formatTime(average) : "–";
     $("#bestTime").textContent = best ? formatTime(best) : "–";
+  }
+  if (game === "sentence") {
+    $("#sentenceWordsResult").textContent = `${state.sentenceWordScore} von ${state.sentenceTotalWords}`;
+    $("#sentenceFirstTryResult").textContent = `${state.sentenceFirstTry} von ${TOTALS.sentence}`;
   }
   showScreen("result");
 }
@@ -343,6 +564,7 @@ function replay() {
   if (state.game === "flash") startFlash();
   if (state.game === "chain") startChain();
   if (state.game === "real") startReal();
+  if (state.game === "sentence") startSentence();
 }
 
 $$('[data-open-game]').forEach((button) => button.addEventListener("click", () => openGame(button.dataset.openGame)));
@@ -352,6 +574,7 @@ $("#startFlash").addEventListener("click", startFlash);
 $("#playAgain").addEventListener("click", replay);
 $("#answerReal").addEventListener("click", () => answerReal(true));
 $("#answerMade").addEventListener("click", () => answerReal(false));
+$("#checkSentence").addEventListener("click", checkSentenceOrder);
 
 $$('[data-flash-speed]').forEach((button) => {
   button.addEventListener("click", () => {

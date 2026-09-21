@@ -1,9 +1,10 @@
 # Wortblitz – Lesetraining für Klasse 3
 
-Eine statische, datensparsame Web-App mit drei Übungen:
+Eine statische, datensparsame Web-App mit vier Übungen:
 
 - **Blitzwort:** Wort kurz sehen, anschließend wiederfinden und die Suchzeit erfahren.
 - **Lesekette:** Ein Zielwort exakt unter ähnlichen Wörtern erkennen.
+- **Satzblitz:** Wörter nacheinander kurz sehen, wiedererkennen und fünf vollständige Sätze ordnen.
 - **Richtig oder erfunden?:** Echte Wörter von lauttreuen Fantasiewörtern unterscheiden.
 
 Die App benötigt keine Anmeldung und keinen Server. Tagesfortschritt, Sterne und Toneinstellung werden ausschließlich lokal im Browser des jeweiligen Tablets gespeichert.
