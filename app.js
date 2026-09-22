@@ -1,6 +1,6 @@
 "use strict";
 
-const WORDS = [
+const DEFAULT_WORDS = [
   "aber", "alle", "also", "andere", "auch", "auf", "aus", "bei", "beide", "beim",
   "dann", "darum", "das", "davon", "deine", "dieser", "doch", "dort", "durch", "eigentlich",
   "einfach", "einmal", "etwas", "fast", "finden", "früher", "ganz", "gegen", "genau", "gestern",
@@ -11,6 +11,9 @@ const WORDS = [
   "Freundschaft", "Gedanke", "Geschichte", "Geheimnis", "Morgen", "Schlüssel", "Schule", "Stunde", "Tasche", "Wasser"
 ];
 
+let customWords = [];
+let WORDS = [...DEFAULT_WORDS];
+
 const MADE_UP = [
   "Flinter", "Bramel", "Korstig", "Taspel", "Wumper", "Glaspen", "Finterei", "Schlummerich", "Wolkigel", "Kreiselmut",
   "Dinter", "Pflasum", "Morgsel", "Lumpfen", "Schreubel", "Knistel", "Blauder", "Funkerin", "Zappelich", "Träumelei",
@@ -18,27 +21,47 @@ const MADE_UP = [
   "Glimmerich", "Haufel", "Raschung", "Flüsterling", "Klunkern", "Wuseligkeit", "Tromsel", "Hellerich", "Drübenheit", "Schlüsselung"
 ];
 
-const SENTENCES = [
-  "Heute scheint die Sonne besonders warm.",
-  "Der kleine Hund wartet geduldig vor seiner Tür.",
-  "Mia findet einen bunten Stein im Garten.",
-  "Nach der Pause lesen wir eine Geschichte.",
-  "Plötzlich klopft jemand laut an die Tür.",
-  "Unser Ausflug beginnt morgen nach dem Frühstück.",
-  "Im Winter tragen viele Kinder warme Jacken.",
-  "Auf dem Schulhof wächst ein großer Baum.",
-  "Jonas versteckt den Schlüssel unter seiner Tasche.",
-  "Die Freunde bauen gemeinsam eine lange Brücke.",
-  "Abends leuchten viele Sterne über unserem Haus.",
-  "Vielleicht finden wir später einen geheimen Weg.",
-  "Das Wasser fließt schnell zwischen den Steinen."
-];
+const SENTENCES = {
+  easy: [
+    "Heute scheint die Sonne.",
+    "Mia findet einen Stein.",
+    "Der Hund wartet draußen.",
+    "Wir lesen eine Geschichte.",
+    "Plötzlich klingelt das Telefon.",
+    "Draußen fliegen viele Vögel.",
+    "Papa kocht eine Suppe.",
+    "Das Wasser ist kalt."
+  ],
+  medium: [
+    "Heute scheint die Sonne besonders warm.",
+    "Mia findet einen bunten Stein im Garten.",
+    "Nach der Pause lesen wir eine Geschichte.",
+    "Plötzlich klopft jemand laut an die Tür.",
+    "Unser Ausflug beginnt morgen nach dem Frühstück.",
+    "Im Winter tragen viele Kinder warme Jacken.",
+    "Auf dem Schulhof wächst ein großer Baum.",
+    "Die Freunde bauen gemeinsam eine lange Brücke.",
+    "Abends leuchten viele Sterne über unserem Haus.",
+    "Vielleicht finden wir später einen geheimen Weg."
+  ],
+  hard: [
+    "Der kleine Hund wartet geduldig vor seiner roten Tür.",
+    "Jonas versteckt den alten Schlüssel unter seiner schweren Tasche.",
+    "Nach dem Unterricht spielen die Kinder gemeinsam auf dem Schulhof.",
+    "Plötzlich entdeckt Mia einen geheimen Weg zwischen den hohen Bäumen.",
+    "Am frühen Morgen beginnt unsere lange Reise durch die Berge.",
+    "Die mutige Katze klettert vorsichtig über das nasse Garagendach.",
+    "Vor dem Frühstück liest mein Bruder eine spannende Geschichte.",
+    "Im dunklen Keller finden wir eine Kiste voller alter Bücher."
+  ]
+};
 
 const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5 };
 const screens = [...document.querySelectorAll("[data-screen]")];
 const state = {
   sound: localStorage.getItem("wortblitz-sound") !== "off",
   flashSpeed: 900,
+  sentenceLevel: "medium",
   game: null,
   index: 0,
   score: 0,
@@ -57,6 +80,7 @@ const state = {
   sentenceAttempts: 0,
   sentenceBank: [],
   sentenceBuilt: [],
+  adminSession: null,
   locked: false
 };
 
@@ -201,7 +225,7 @@ function openGame(game) {
   if (game === "flash") showScreen("flash-setup");
   if (game === "chain") startChain();
   if (game === "real") startReal();
-  if (game === "sentence") startSentence();
+  if (game === "sentence") showScreen("sentence-setup");
 }
 
 function startFlash() {
@@ -364,7 +388,7 @@ function answerReal(answer) {
 }
 
 function startSentence() {
-  const sentenceSet = sample(SENTENCES, TOTALS.sentence);
+  const sentenceSet = sample(SENTENCES[state.sentenceLevel], TOTALS.sentence);
   const sentenceTotalWords = sentenceSet.reduce((total, sentence) => total + sentence.split(" ").length, 0);
   Object.assign(state, {
     game: "sentence",
@@ -541,7 +565,8 @@ function finishGame(game) {
   const total = game === "sentence" ? state.sentenceTotalWords : TOTALS[game];
   const score = game === "sentence" ? state.sentenceWordScore : state.score;
   const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz" };
-  $("#resultGame").textContent = `${titles[game]} geschafft`;
+  const sentenceLevels = { easy: "kurz", medium: "mittel", hard: "lang" };
+  $("#resultGame").textContent = game === "sentence" ? `${titles[game]} · ${sentenceLevels[state.sentenceLevel]}` : `${titles[game]} geschafft`;
   $("#resultTitle").textContent = score === total ? "Starke Runde!" : score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
   $("#resultScore").textContent = score;
   $("#resultTotal").textContent = `von ${total} richtig`;
@@ -567,20 +592,292 @@ function replay() {
   if (state.game === "sentence") startSentence();
 }
 
+const ADMIN_STORAGE_KEY = "wortblitz-admin-config-v1";
+
+function setCustomWords(words) {
+  const defaultKeys = new Set(DEFAULT_WORDS.map((word) => word.toLocaleLowerCase("de")));
+  const seen = new Set();
+  customWords = words
+    .map((word) => String(word).trim())
+    .filter((word) => word && /^[A-Za-zÄÖÜäöüß-]+$/.test(word))
+    .filter((word) => {
+      const key = word.toLocaleLowerCase("de");
+      if (defaultKeys.has(key) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.localeCompare(b, "de"));
+  WORDS = [...DEFAULT_WORDS, ...customWords];
+  if (!$("#adminManagePanel").hidden) renderCustomWords();
+}
+
+async function loadSharedWords() {
+  try {
+    const response = await fetch("words.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Wortliste nicht erreichbar");
+    const data = await response.json();
+    setCustomWords(Array.isArray(data.customWords) ? data.customWords : []);
+  } catch {
+    // Offline bleibt die zuletzt geladene Wortliste aktiv.
+  }
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
+function base64ToBytes(value) {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function textToBase64(value) {
+  return bytesToBase64(new TextEncoder().encode(value));
+}
+
+function base64ToText(value) {
+  return new TextDecoder().decode(base64ToBytes(value.replace(/\s/g, "")));
+}
+
+async function deriveAdminKey(pin, salt, usage) {
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 120000, hash: "SHA-256" },
+    material,
+    { name: "AES-GCM", length: 256 },
+    false,
+    [usage]
+  );
+}
+
+async function encryptAdminConfig(config, pin) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveAdminKey(pin, salt, "encrypt");
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(config)));
+  return JSON.stringify({ salt: bytesToBase64(salt), iv: bytesToBase64(iv), data: bytesToBase64(new Uint8Array(encrypted)) });
+}
+
+async function decryptAdminConfig(stored, pin) {
+  const payload = JSON.parse(stored);
+  const salt = base64ToBytes(payload.salt);
+  const iv = base64ToBytes(payload.iv);
+  const key = await deriveAdminKey(pin, salt, "decrypt");
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, base64ToBytes(payload.data));
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
+function inferredRepository() {
+  const githubHost = location.hostname.match(/^([^.]+)\.github\.io$/i);
+  const pathPart = location.pathname.split("/").filter(Boolean)[0] || "";
+  return { owner: githubHost?.[1] || "", repo: pathPart };
+}
+
+function showAdminPanel(panel) {
+  $("#adminSetupPanel").hidden = panel !== "setup";
+  $("#adminLoginPanel").hidden = panel !== "login";
+  $("#adminManagePanel").hidden = panel !== "manage";
+  $("#adminStatus").textContent = "";
+  $("#adminStatus").className = "sync-status";
+  if (panel === "setup") {
+    const inferred = inferredRepository();
+    if (!$("#adminOwner").value) $("#adminOwner").value = inferred.owner;
+    if (!$("#adminRepo").value) $("#adminRepo").value = inferred.repo;
+  }
+  if (panel === "login") {
+    $("#adminLoginPanel").querySelector(".admin-intro").textContent = "Gib deine PIN ein, um die gemeinsame Wortliste zu bearbeiten.";
+  }
+  if (panel === "manage") renderCustomWords();
+}
+
+function openAdmin() {
+  showScreen("admin");
+  if (state.adminSession) return showAdminPanel("manage");
+  showAdminPanel(localStorage.getItem(ADMIN_STORAGE_KEY) ? "login" : "setup");
+}
+
+function setAdminStatus(message, type = "") {
+  $("#adminStatus").textContent = message;
+  $("#adminStatus").className = `sync-status ${type}`.trim();
+}
+
+function githubHeaders(config) {
+  return {
+    Accept: "application/vnd.github+json",
+    Authorization: `Bearer ${config.token}`,
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+}
+
+function githubWordsUrl(config) {
+  return `https://api.github.com/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/words.json`;
+}
+
+async function readGithubWords(config) {
+  const response = await fetch(`${githubWordsUrl(config)}?ref=${encodeURIComponent(config.branch)}`, { headers: githubHeaders(config) });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw new Error(detail.message || `GitHub-Fehler ${response.status}`);
+  }
+  const file = await response.json();
+  const data = JSON.parse(base64ToText(file.content));
+  return { sha: file.sha, words: Array.isArray(data.customWords) ? data.customWords : [] };
+}
+
+async function writeGithubWords(config, words) {
+  const current = await readGithubWords(config);
+  const content = `${JSON.stringify({ customWords: words }, null, 2)}\n`;
+  const response = await fetch(githubWordsUrl(config), {
+    method: "PUT",
+    headers: { ...githubHeaders(config), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: "Gemeinsame Wortliste aktualisiert",
+      content: textToBase64(content),
+      sha: current.sha,
+      branch: config.branch
+    })
+  });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw new Error(detail.message || `GitHub-Fehler ${response.status}`);
+  }
+  setCustomWords(words);
+}
+
+function renderCustomWords() {
+  $("#customWordCount").textContent = `${customWords.length} ${customWords.length === 1 ? "eigenes Wort" : "eigene Wörter"}`;
+  const list = $("#customWordList");
+  list.replaceChildren();
+  customWords.forEach((word) => {
+    const item = document.createElement("span");
+    item.className = "custom-word-item";
+    item.append(document.createTextNode(word));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `${word} löschen`);
+    remove.addEventListener("click", () => removeCustomWord(word));
+    item.append(remove);
+    list.append(item);
+  });
+}
+
+async function saveAdminSetup() {
+  const owner = $("#adminOwner").value.trim();
+  const repo = $("#adminRepo").value.trim();
+  const branch = $("#adminBranch").value.trim() || "main";
+  const token = $("#adminToken").value.trim();
+  const pin = $("#adminPinSetup").value;
+  const confirmation = $("#adminPinConfirm").value;
+  if (!owner || !repo || !token) return setAdminStatus("Bitte fülle alle GitHub-Felder aus.", "error");
+  if (!/^\d{6,12}$/.test(pin)) return setAdminStatus("Die PIN muss aus 6 bis 12 Ziffern bestehen.", "error");
+  if (pin !== confirmation) return setAdminStatus("Die beiden PIN-Eingaben stimmen nicht überein.", "error");
+  if (!crypto?.subtle) return setAdminStatus("Die verschlüsselte Speicherung wird von diesem Browser nicht unterstützt.", "error");
+
+  const config = { owner, repo, branch, token };
+  setAdminStatus("Verbindung wird geprüft …");
+  try {
+    const remote = await readGithubWords(config);
+    const encrypted = await encryptAdminConfig(config, pin);
+    localStorage.setItem(ADMIN_STORAGE_KEY, encrypted);
+    state.adminSession = config;
+    setCustomWords(remote.words);
+    $("#adminToken").value = "";
+    $("#adminPinSetup").value = "";
+    $("#adminPinConfirm").value = "";
+    showAdminPanel("manage");
+    setAdminStatus("Adminzugang ist eingerichtet.", "good");
+  } catch (error) {
+    setAdminStatus(`Verbindung fehlgeschlagen: ${error.message}`, "error");
+  }
+}
+
+async function loginAdmin() {
+  const pin = $("#adminPinLogin").value;
+  const stored = localStorage.getItem(ADMIN_STORAGE_KEY);
+  if (!stored) return showAdminPanel("setup");
+  try {
+    const config = await decryptAdminConfig(stored, pin);
+    state.adminSession = config;
+    const remote = await readGithubWords(config);
+    setCustomWords(remote.words);
+    $("#adminPinLogin").value = "";
+    showAdminPanel("manage");
+    setAdminStatus("Wortliste ist aktuell.", "good");
+  } catch {
+    state.adminSession = null;
+    $("#adminPinLogin").value = "";
+    $("#adminPinLogin").focus();
+    setAdminStatus("PIN falsch oder Verbindung nicht möglich. Bitte versuche es erneut.", "error");
+  }
+}
+
+async function addCustomWord(event) {
+  event.preventDefault();
+  if (!state.adminSession) return;
+  const word = $("#newWord").value.trim();
+  if (!word || !/^[A-Za-zÄÖÜäöüß-]+$/.test(word)) return setAdminStatus("Bitte gib genau ein Wort ohne Leerzeichen ein.", "error");
+  if (WORDS.some((existing) => existing.toLocaleLowerCase("de") === word.toLocaleLowerCase("de"))) return setAdminStatus("Dieses Wort ist bereits vorhanden.", "error");
+  setAdminStatus("Wort wird gespeichert …");
+  try {
+    await writeGithubWords(state.adminSession, [...customWords, word].sort((a, b) => a.localeCompare(b, "de")));
+    $("#newWord").value = "";
+    setAdminStatus("Gespeichert. Auf den Tablets erscheint das Wort nach der nächsten Aktualisierung.", "good");
+  } catch (error) {
+    setAdminStatus(`Speichern fehlgeschlagen: ${error.message}`, "error");
+  }
+}
+
+async function removeCustomWord(word) {
+  if (!state.adminSession || !confirm(`„${word}“ wirklich aus der gemeinsamen Liste löschen?`)) return;
+  setAdminStatus("Wort wird gelöscht …");
+  try {
+    await writeGithubWords(state.adminSession, customWords.filter((item) => item !== word));
+    setAdminStatus("Wort gelöscht. Die Tablets übernehmen die Änderung automatisch.", "good");
+  } catch (error) {
+    setAdminStatus(`Löschen fehlgeschlagen: ${error.message}`, "error");
+  }
+}
+
+function resetAdminSetup() {
+  if (!confirm("Die lokale Adminverbindung wirklich zurücksetzen? Die gemeinsame Wortliste bleibt erhalten.")) return;
+  localStorage.removeItem(ADMIN_STORAGE_KEY);
+  state.adminSession = null;
+  showAdminPanel("setup");
+}
+
 $$('[data-open-game]').forEach((button) => button.addEventListener("click", () => openGame(button.dataset.openGame)));
 $$('[data-back-home]').forEach((button) => button.addEventListener("click", () => showScreen("home")));
 $("#homeButton").addEventListener("click", () => showScreen("home"));
+$("#adminButton").addEventListener("click", openAdmin);
 $("#startFlash").addEventListener("click", startFlash);
+$("#startSentence").addEventListener("click", startSentence);
 $("#playAgain").addEventListener("click", replay);
 $("#answerReal").addEventListener("click", () => answerReal(true));
 $("#answerMade").addEventListener("click", () => answerReal(false));
 $("#checkSentence").addEventListener("click", checkSentenceOrder);
+$("#saveAdminSetup").addEventListener("click", saveAdminSetup);
+$("#adminLogin").addEventListener("click", loginAdmin);
+$("#adminPinLogin").addEventListener("keydown", (event) => { if (event.key === "Enter") loginAdmin(); });
+$("#addWordForm").addEventListener("submit", addCustomWord);
+$("#adminLogout").addEventListener("click", () => { state.adminSession = null; showAdminPanel("login"); });
+$("#resetAdminSetup").addEventListener("click", resetAdminSetup);
 
 $$('[data-flash-speed]').forEach((button) => {
   button.addEventListener("click", () => {
     $$('[data-flash-speed]').forEach((item) => item.classList.remove("selected"));
     button.classList.add("selected");
     state.flashSpeed = Number(button.dataset.flashSpeed);
+  });
+});
+
+$$('[data-sentence-level]').forEach((button) => {
+  button.addEventListener("click", () => {
+    $$('[data-sentence-level]').forEach((item) => item.classList.remove("selected"));
+    button.classList.add("selected");
+    state.sentenceLevel = button.dataset.sentenceLevel;
   });
 });
 
@@ -597,3 +894,5 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
 
 updateStatsView();
 setSoundButton();
+loadSharedWords();
+window.setInterval(loadSharedWords, 60000);
