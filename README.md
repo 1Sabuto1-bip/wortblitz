@@ -2,12 +2,12 @@
 
 Eine statische, datensparsame Web-App mit vier Übungen:
 
-- **Blitzwort:** Wort kurz sehen, anschließend wiederfinden und die Suchzeit erfahren.
-- **Lesekette:** Ein Zielwort exakt unter ähnlichen Wörtern erkennen.
+- **Blitzwort:** 20 Wörter mit vier Schwierigkeitsstufen. Anzeigedauer und Auswahlmenge steigen von vier auf sechs Wörter.
+- **Lesekette:** Zehn Wörter nacheinander aus jeweils zwölf Möglichkeiten erkennen. Ein Fehler setzt die Kette zurück; Fehlversuche werden ausgewertet.
 - **Satzblitz:** Wörter nacheinander kurz sehen, wiedererkennen und fünf vollständige Sätze ordnen. Drei Stufen steuern die Satzlänge.
 - **Richtig oder erfunden?:** Echte Wörter von lauttreuen Fantasiewörtern unterscheiden.
 
-Die Kinder benötigen keine Anmeldung. Tagesfortschritt, Sterne und Toneinstellung werden ausschließlich lokal im Browser des jeweiligen Tablets gespeichert. Eigene Wörter liegen gemeinsam in `words.json` und werden von allen Tablets regelmäßig neu geladen.
+Zu Beginn gibt jedes Kind seinen Namen ein. Name, Gesamtpunkte, Tagesfortschritt und Toneinstellung werden ausschließlich lokal im Browser des jeweiligen Tablets gespeichert. Der Reset-Knopf löscht nur dieses Kinderprofil; Adminzugang und gemeinsame Wortliste bleiben erhalten. Eigene Wörter liegen gemeinsam in `words.json` und werden von allen Tablets regelmäßig neu geladen.
 
 ## Veröffentlichung mit GitHub Pages
 

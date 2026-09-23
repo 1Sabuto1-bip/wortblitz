@@ -23,16 +23,32 @@
           <strong id="starCount">0</strong>
         </div>
         <button class="icon-button" id="adminButton" type="button" aria-label="Adminbereich öffnen">🔐</button>
+        <button class="icon-button" id="resetProfileButton" type="button" aria-label="Kinderprofil zurücksetzen">↻</button>
         <button class="icon-button" id="soundButton" type="button" aria-label="Ton ausschalten" aria-pressed="true">🔊</button>
       </div>
     </header>
 
     <main id="app" tabindex="-1">
+      <section class="screen profile-screen" data-screen="profile" hidden>
+        <div class="setup-card profile-card">
+          <div class="round-icon round-icon--profile" aria-hidden="true">★</div>
+          <p class="eyebrow">Dein Lesetraining</p>
+          <h1>Wie heißt du?</h1>
+          <p class="setup-hint">Für dich werden auf diesem Tablet Punkte gesammelt.</p>
+          <form class="profile-form" id="profileForm">
+            <label for="playerName">Dein Name</label>
+            <input id="playerName" type="text" maxlength="24" autocomplete="off" placeholder="Name eingeben">
+            <button class="primary-button" type="submit">Los geht’s</button>
+          </form>
+          <p class="privacy-note">Dein Name bleibt nur auf diesem Tablet.</p>
+        </div>
+      </section>
+
       <section class="screen home-screen" data-screen="home">
         <div class="welcome-row">
           <div>
             <p class="eyebrow">Lesetraining · Klasse 3</p>
-            <h1>Wähle ein Spiel</h1>
+            <h1 id="playerGreeting">Wähle ein Spiel</h1>
           </div>
           <div class="today-card" aria-label="Heutiger Fortschritt">
             <span>Heute geschafft</span>
@@ -88,10 +104,11 @@
           <p class="eyebrow">Blitzwort</p>
           <h1>Wie lange soll das Wort zu sehen sein?</h1>
           <p class="setup-hint">Nach dem Blitzwort findest du es zwischen vier ähnlichen Wörtern. Deine Suchzeit wird angezeigt.</p>
-          <div class="level-list" role="radiogroup" aria-label="Anzeigedauer">
-            <button class="level-button" type="button" data-flash-speed="1400"><strong>Ruhig</strong><span>1,4 Sekunden</span></button>
-            <button class="level-button selected" type="button" data-flash-speed="900"><strong>Flott</strong><span>0,9 Sekunden</span></button>
-            <button class="level-button" type="button" data-flash-speed="550"><strong>Blitzschnell</strong><span>0,55 Sekunden</span></button>
+          <div class="level-list level-list--four" role="radiogroup" aria-label="Schwierigkeitsstufe">
+            <button class="level-button" type="button" data-flash-speed="1400" data-flash-choices="4"><span class="level-icon" aria-hidden="true">🐢</span><span class="level-copy"><strong>Ruhig</strong><span>1,4 Sekunden · 4 Wörter</span></span></button>
+            <button class="level-button selected" type="button" data-flash-speed="900" data-flash-choices="4"><span class="level-icon" aria-hidden="true">🐇</span><span class="level-copy"><strong>Flott</strong><span>0,9 Sekunden · 4 Wörter</span></span></button>
+            <button class="level-button" type="button" data-flash-speed="900" data-flash-choices="6"><span class="level-icon" aria-hidden="true">🔎</span><span class="level-copy"><strong>Knifflig</strong><span>0,9 Sekunden · 6 Wörter</span></span></button>
+            <button class="level-button" type="button" data-flash-speed="550" data-flash-choices="6"><span class="level-icon" aria-hidden="true">⚡</span><span class="level-copy"><strong>Blitzschnell</strong><span>0,55 Sekunden · 6 Wörter</span></span></button>
           </div>
           <button class="primary-button" id="startFlash" type="button">Runde starten</button>
         </div>
@@ -105,9 +122,9 @@
           <h1>Wie lang sollen die Sätze sein?</h1>
           <p class="setup-hint">Zuerst werden die Wörter einzeln gelesen. Danach bringst du den Satz in die richtige Reihenfolge.</p>
           <div class="level-list" role="radiogroup" aria-label="Satzlänge">
-            <button class="level-button" type="button" data-sentence-level="easy"><strong>Kurz</strong><span>4–5 Wörter</span></button>
-            <button class="level-button selected" type="button" data-sentence-level="medium"><strong>Mittel</strong><span>6–7 Wörter</span></button>
-            <button class="level-button" type="button" data-sentence-level="hard"><strong>Lang</strong><span>8–10 Wörter</span></button>
+            <button class="level-button" type="button" data-sentence-level="easy"><span class="level-icon" aria-hidden="true">🐣</span><span class="level-copy"><strong>Kurz</strong><span>4–5 Wörter</span></span></button>
+            <button class="level-button selected" type="button" data-sentence-level="medium"><span class="level-icon" aria-hidden="true">🐿️</span><span class="level-copy"><strong>Mittel</strong><span>6–7 Wörter</span></span></button>
+            <button class="level-button" type="button" data-sentence-level="hard"><span class="level-icon" aria-hidden="true">🦒</span><span class="level-copy"><strong>Lang</strong><span>8–10 Wörter</span></span></button>
           </div>
           <button class="primary-button" id="startSentence" type="button">Fünf Sätze starten</button>
         </div>
@@ -137,7 +154,7 @@
             <span id="chainRoundLabel">Glied 1 von 10</span>
             <div class="progress-track progress-track--chain"><span id="chainProgress"></span></div>
           </div>
-          <div class="mini-score"><span aria-hidden="true">★</span><strong id="chainScore">0</strong></div>
+          <div class="mini-score chain-failures"><span>Fehler</span><strong id="chainFailures">0</strong></div>
         </div>
         <div class="chain-stage">
           <p class="instruction">Finde genau dasselbe Wort.</p>
@@ -208,6 +225,10 @@
           <div class="speed-summary sentence-summary" id="sentenceSummary" hidden>
             <div><span>Wörter erkannt</span><strong id="sentenceWordsResult">0 von 0</strong></div>
             <div><span>Sätze auf Anhieb</span><strong id="sentenceFirstTryResult">0 von 5</strong></div>
+          </div>
+          <div class="speed-summary chain-summary" id="chainSummary" hidden>
+            <div><span>Fehlversuche</span><strong id="chainFailureResult">0</strong></div>
+            <div><span>Kette geschafft</span><strong>10 von 10</strong></div>
           </div>
           <div class="result-actions">
             <button class="primary-button" id="playAgain" type="button">Noch einmal</button>

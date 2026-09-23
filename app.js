@@ -61,6 +61,7 @@ const screens = [...document.querySelectorAll("[data-screen]")];
 const state = {
   sound: localStorage.getItem("wortblitz-sound") !== "off",
   flashSpeed: 900,
+  flashChoiceCount: 4,
   sentenceLevel: "medium",
   game: null,
   index: 0,
@@ -70,6 +71,8 @@ const state = {
   times: [],
   flashWords: [],
   chainWords: [],
+  chainFailures: 0,
+  chainBestIndex: 0,
   realItems: [],
   sentenceSet: [],
   sentenceIndex: 0,
@@ -84,6 +87,7 @@ const state = {
   locked: false
 };
 
+let profile = loadProfile();
 let stats = loadStats();
 let pendingTimers = [];
 
@@ -98,14 +102,29 @@ function localDateKey() {
   return `${year}-${month}-${day}`;
 }
 
+function loadProfile() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("wortblitz-profile") || "null");
+    if (!saved?.name) return null;
+    return { name: String(saved.name).slice(0, 24), points: Number(saved.points) || 0 };
+  } catch {
+    return null;
+  }
+}
+
+function saveProfile() {
+  if (profile) localStorage.setItem("wortblitz-profile", JSON.stringify(profile));
+  updateStatsView();
+}
+
 function loadStats() {
   try {
     const saved = JSON.parse(localStorage.getItem("wortblitz-stats") || "{}");
     const today = localDateKey();
-    if (saved.date !== today) return { date: today, correct: 0, stars: 0 };
-    return { date: today, correct: Number(saved.correct) || 0, stars: Number(saved.stars) || 0 };
+    if (saved.date !== today) return { date: today, correct: 0 };
+    return { date: today, correct: Number(saved.correct) || 0 };
   } catch {
-    return { date: localDateKey(), correct: 0, stars: 0 };
+    return { date: localDateKey(), correct: 0 };
   }
 }
 
@@ -115,14 +134,52 @@ function saveStats() {
 }
 
 function updateStatsView() {
-  $("#starCount").textContent = stats.stars;
+  $("#starCount").textContent = profile?.points || 0;
   $("#todayCorrect").textContent = stats.correct;
+  $("#playerGreeting").textContent = profile ? `Hallo, ${profile.name}!` : "Wähle ein Spiel";
 }
 
 function addCorrect() {
   stats.correct += 1;
-  stats.stars += 1;
+  if (profile) profile.points += 1;
+  saveProfile();
   saveStats();
+}
+
+function addBonusPoints(amount) {
+  if (!profile) return;
+  profile.points += amount;
+  saveProfile();
+}
+
+function goHome() {
+  showScreen(profile ? "home" : "profile");
+}
+
+function startPlayerProfile(event) {
+  event.preventDefault();
+  const name = $("#playerName").value.trim().replace(/\s+/g, " ");
+  if (name.length < 2) {
+    $("#playerName").focus();
+    return;
+  }
+  profile = { name: name.slice(0, 24), points: 0 };
+  stats = { date: localDateKey(), correct: 0 };
+  saveProfile();
+  saveStats();
+  $("#playerName").value = "";
+  showScreen("home");
+}
+
+function resetPlayerProfile() {
+  if (!profile) return showScreen("profile");
+  if (!confirm(`Profil und Punkte von ${profile.name} wirklich zurücksetzen?`)) return;
+  localStorage.removeItem("wortblitz-profile");
+  localStorage.removeItem("wortblitz-stats");
+  profile = null;
+  stats = { date: localDateKey(), correct: 0 };
+  updateStatsView();
+  showScreen("profile");
 }
 
 function showScreen(name) {
@@ -188,7 +245,9 @@ function setSoundButton() {
 function updateRound(prefix, total) {
   $(`#${prefix}RoundLabel`).textContent = prefix === "chain" ? `Glied ${state.index + 1} von ${total}` : `Wort ${state.index + 1} von ${total}`;
   $(`#${prefix}Progress`).style.width = `${(state.index / total) * 100}%`;
-  $(`#${prefix}Score`).textContent = state.score;
+  const score = $(`#${prefix}Score`);
+  if (score) score.textContent = state.score;
+  if (prefix === "chain") $("#chainFailures").textContent = state.chainFailures;
 }
 
 function createChoiceButton(word, onClick) {
@@ -259,7 +318,7 @@ function nextFlash() {
       $("#flashWord").classList.add("is-hidden");
       $("#flashWord").setAttribute("aria-hidden", "true");
       $("#flashInstruction").textContent = "Wo ist das Blitzwort?";
-      const choices = shuffle([state.current, ...distractorsFor(state.current, 3)]);
+      const choices = shuffle([state.current, ...distractorsFor(state.current, state.flashChoiceCount - 1)]);
       choices.forEach((word) => $("#flashChoices").append(createChoiceButton(word, answerFlash)));
       // Ein kurzer leerer Moment trennt das Merken klar vom Wiedererkennen.
       later(() => {
@@ -297,9 +356,10 @@ function answerFlash(button, word) {
 }
 
 function startChain() {
-  Object.assign(state, { game: "chain", index: 0, score: 0, chainWords: sample(WORDS, TOTALS.chain), locked: false });
+  Object.assign(state, { game: "chain", index: 0, score: 0, chainFailures: 0, chainBestIndex: 0, chainWords: sample(WORDS, TOTALS.chain), locked: false });
   showScreen("chain-play");
   $("#chainVisual").replaceChildren();
+  $("#chainFailures").textContent = "0";
   nextChain();
 }
 
@@ -311,7 +371,7 @@ function nextChain() {
   $("#chainTarget").textContent = state.current;
   $("#chainFeedback").textContent = "";
   $("#chainFeedback").className = "feedback-line";
-  const choices = shuffle([state.current, ...distractorsFor(state.current, 5)]);
+  const choices = shuffle([state.current, ...distractorsFor(state.current, 11)]);
   const container = $("#chainChoices");
   container.replaceChildren();
   choices.forEach((word) => container.append(createChoiceButton(word, answerChain)));
@@ -320,19 +380,31 @@ function nextChain() {
 function answerChain(button, word) {
   if (state.locked) return;
   if (word !== state.current) {
+    state.locked = true;
+    state.chainFailures += 1;
+    $("#chainFailures").textContent = state.chainFailures;
     button.classList.add("wrong");
-    $("#chainFeedback").textContent = "Schau noch einmal genau hin.";
+    const correct = [...$("#chainChoices").children].find((item) => item.textContent === state.current);
+    if (correct) correct.classList.add("correct");
+    $("#chainFeedback").textContent = "Nicht ganz – die Kette beginnt wieder von vorn.";
     $("#chainFeedback").className = "feedback-line try";
     beep(false);
-    later(() => button.classList.remove("wrong"), 430);
+    later(() => {
+      state.index = 0;
+      state.score = 0;
+      $("#chainVisual").replaceChildren();
+      nextChain();
+    }, 1200);
     return;
   }
   state.locked = true;
   button.classList.add("correct");
   state.score += 1;
-  addCorrect();
+  if (state.index >= state.chainBestIndex) {
+    state.chainBestIndex = state.index + 1;
+    addCorrect();
+  }
   beep(true);
-  $("#chainScore").textContent = state.score;
   $("#chainFeedback").textContent = "Passt! Deine Kette wird länger.";
   $("#chainFeedback").className = "feedback-line good";
   const link = document.createElement("span");
@@ -534,8 +606,7 @@ function checkSentenceOrder() {
   if (isCorrect) {
     state.locked = true;
     if (state.sentenceAttempts === 0) state.sentenceFirstTry += 1;
-    stats.stars += 2;
-    saveStats();
+    addBonusPoints(2);
     beep(true);
     $("#sentenceOrderStage").classList.add("is-correct");
     $("#sentenceOrderFeedback").textContent = state.sentenceSet[state.sentenceIndex];
@@ -567,11 +638,16 @@ function finishGame(game) {
   const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz" };
   const sentenceLevels = { easy: "kurz", medium: "mittel", hard: "lang" };
   $("#resultGame").textContent = game === "sentence" ? `${titles[game]} · ${sentenceLevels[state.sentenceLevel]}` : `${titles[game]} geschafft`;
-  $("#resultTitle").textContent = score === total ? "Starke Runde!" : score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
+  let resultTitle = score === total ? "Starke Runde!" : score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
+  if (game === "chain") {
+    resultTitle = state.chainFailures === 0 ? "Wow! Beim ersten Versuch!" : state.chainFailures <= 2 ? "Geschafft!" : "Du musst noch etwas üben.";
+  }
+  $("#resultTitle").textContent = resultTitle;
   $("#resultScore").textContent = score;
   $("#resultTotal").textContent = `von ${total} richtig`;
   $("#speedSummary").hidden = game !== "flash";
   $("#sentenceSummary").hidden = game !== "sentence";
+  $("#chainSummary").hidden = game !== "chain";
   if (game === "flash") {
     const average = state.times.length ? state.times.reduce((sum, time) => sum + time, 0) / state.times.length : 0;
     const best = state.times.length ? Math.min(...state.times) : 0;
@@ -582,6 +658,7 @@ function finishGame(game) {
     $("#sentenceWordsResult").textContent = `${state.sentenceWordScore} von ${state.sentenceTotalWords}`;
     $("#sentenceFirstTryResult").textContent = `${state.sentenceFirstTry} von ${TOTALS.sentence}`;
   }
+  if (game === "chain") $("#chainFailureResult").textContent = state.chainFailures;
   showScreen("result");
 }
 
@@ -849,8 +926,10 @@ function resetAdminSetup() {
 }
 
 $$('[data-open-game]').forEach((button) => button.addEventListener("click", () => openGame(button.dataset.openGame)));
-$$('[data-back-home]').forEach((button) => button.addEventListener("click", () => showScreen("home")));
-$("#homeButton").addEventListener("click", () => showScreen("home"));
+$$('[data-back-home]').forEach((button) => button.addEventListener("click", goHome));
+$("#homeButton").addEventListener("click", goHome);
+$("#profileForm").addEventListener("submit", startPlayerProfile);
+$("#resetProfileButton").addEventListener("click", resetPlayerProfile);
 $("#adminButton").addEventListener("click", openAdmin);
 $("#startFlash").addEventListener("click", startFlash);
 $("#startSentence").addEventListener("click", startSentence);
@@ -870,6 +949,7 @@ $$('[data-flash-speed]').forEach((button) => {
     $$('[data-flash-speed]').forEach((item) => item.classList.remove("selected"));
     button.classList.add("selected");
     state.flashSpeed = Number(button.dataset.flashSpeed);
+    state.flashChoiceCount = Number(button.dataset.flashChoices);
   });
 });
 
@@ -896,3 +976,4 @@ updateStatsView();
 setSoundButton();
 loadSharedWords();
 window.setInterval(loadSharedWords, 60000);
+showScreen(profile ? "home" : "profile");
