@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#173f5f">
-  <meta name="description" content="Vier kurze Lesespiele für die Förderung des Sichtwortschatzes">
+  <meta name="description" content="Vier kurze Lesespiele für die Förderung des Sichtwortschatzes in den Klassen 2 bis 4.">
   <title>Wortblitz</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23173f5f'/%3E%3Cpath d='M36 5 15 36h15l-3 23 22-34H34z' fill='%23ffd166'/%3E%3C/svg%3E">
@@ -38,6 +38,12 @@
           <form class="profile-form" id="profileForm">
             <label for="playerName">Dein Name</label>
             <input id="playerName" type="text" maxlength="24" autocomplete="off" placeholder="Name eingeben">
+            <label for="playerGradeSelect">Deine Klassenstufe</label>
+            <select id="playerGradeSelect">
+              <option value="2">2. Klasse</option>
+              <option value="3" selected>3. Klasse</option>
+              <option value="4">4. Klasse</option>
+            </select>
             <button class="primary-button" type="submit">Los geht’s</button>
           </form>
           <p class="privacy-note">Dein Name bleibt nur auf diesem Tablet.</p>
@@ -47,7 +53,7 @@
       <section class="screen home-screen" data-screen="home">
         <div class="welcome-row">
           <div>
-            <p class="eyebrow">Lesetraining</p>
+            <p class="eyebrow">Lesetraining · Klasse <span id="playerGradeLabel">3</span></p>
             <h1 id="playerGreeting">Wähle ein Spiel</h1>
           </div>
           <div class="today-card" aria-label="Heutiger Fortschritt">
@@ -269,11 +275,29 @@
               <div><span>Gemeinsame Wortliste</span><strong id="customWordCount">0 eigene Wörter</strong></div>
               <button class="text-button" id="adminLogout" type="button">Abmelden</button>
             </div>
+            <label class="admin-grade-select" for="customGradeSelect">Wortliste bearbeiten
+              <select id="customGradeSelect">
+                <option value="2">2. Klasse</option>
+                <option value="3">3. Klasse</option>
+                <option value="4">4. Klasse</option>
+              </select>
+            </label>
             <form class="add-word-form" id="addWordForm">
               <label for="newWord">Neues Wort</label>
               <div><input id="newWord" type="text" autocomplete="off" maxlength="40" placeholder="zum Beispiel: aufmerksam"><button class="primary-button" type="submit">Hinzufügen</button></div>
             </form>
             <div class="custom-word-list" id="customWordList"></div>
+            <div class="csv-import">
+              <div>
+                <h2>Wörter aus CSV einlesen</h2>
+                <p>Eine Spalte <strong>Wort</strong> nutzt die oben gewählte Klasse. Mit <strong>Klasse;Wort</strong> kannst du mehrere Jahrgänge auf einmal importieren.</p>
+              </div>
+              <input id="csvFile" type="file" accept=".csv,text/csv">
+              <div class="csv-actions">
+                <button class="primary-button" id="importCsvButton" type="button">CSV importieren</button>
+                <button class="secondary-button" id="downloadCsvTemplate" type="button">CSV-Vorlage</button>
+              </div>
+            </div>
             <button class="danger-link" id="resetAdminSetup" type="button">Verbindung neu einrichten</button>
           </div>
         </div>

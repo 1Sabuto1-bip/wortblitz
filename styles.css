@@ -157,16 +157,17 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.05; letter-s
 .admin-card h1 { font-size: clamp(2rem, 5vw, 3rem); }
 .admin-intro { max-width: 650px; margin: 16px 0 24px; color: var(--muted); line-height: 1.55; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 25px 0 14px; }
-.form-grid label, .pin-label, .add-word-form > label { display: flex; flex-direction: column; gap: 7px; color: var(--ink); font-size: .9rem; font-weight: 800; }
+.form-grid label, .pin-label, .add-word-form > label, .admin-grade-select { display: flex; flex-direction: column; gap: 7px; color: var(--ink); font-size: .9rem; font-weight: 800; }
 .form-grid .form-wide { grid-column: 1 / -1; }
-.form-grid input, .pin-label input, .add-word-form input { width: 100%; min-height: 52px; padding: 10px 14px; border: 2px solid #cfdee7; border-radius: 14px; background: var(--white); color: var(--ink); font-size: 1rem; }
-.form-grid input:focus, .pin-label input:focus, .add-word-form input:focus { border-color: var(--blue); outline: 3px solid rgba(61, 116, 185, .16); }
+.form-grid input, .pin-label input, .add-word-form input, .admin-grade-select select { width: 100%; min-height: 52px; padding: 10px 14px; border: 2px solid #cfdee7; border-radius: 14px; background: var(--white); color: var(--ink); font-size: 1rem; }
+.form-grid input:focus, .pin-label input:focus, .add-word-form input:focus, .admin-grade-select select:focus { border-color: var(--blue); outline: 3px solid rgba(61, 116, 185, .16); }
 .admin-help { margin: 0 0 22px; padding: 13px 15px; border-radius: 14px; background: #eef6fb; color: var(--muted); font-size: .9rem; line-height: 1.45; }
 .pin-label { max-width: 330px; margin: 25px 0 15px; }
 .admin-status-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 27px 0 22px; padding: 17px 19px; border-radius: 18px; background: #eef6fb; }
 .admin-status-row span, .admin-status-row strong { display: block; }
 .admin-status-row span { color: var(--muted); font-size: .85rem; }
 .admin-status-row strong { margin-top: 3px; font-size: 1.12rem; }
+.admin-grade-select { max-width: 260px; margin-bottom: 18px; }
 .text-button, .danger-link { border: 0; background: transparent; font-weight: 800; cursor: pointer; }
 .text-button { color: var(--blue); }
 .danger-link { display: block; margin: 30px auto 0; color: #a3422d; }
@@ -179,14 +180,19 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.05; letter-s
 .custom-word-list:empty::before { content: "Noch keine eigenen Wörter gespeichert."; align-self: center; color: var(--muted); }
 .custom-word-item { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 7px 9px 7px 13px; border-radius: 13px; background: var(--white); box-shadow: 0 4px 12px rgba(23, 63, 95, .08); font-weight: 800; }
 .custom-word-item button { display: grid; place-items: center; width: 29px; height: 29px; border: 0; border-radius: 9px; background: #fff0ec; color: #a3422d; font-weight: 900; cursor: pointer; }
+.csv-import { display: grid; gap: 14px; margin-top: 24px; padding: 20px; border: 2px dashed #bfd1dc; border-radius: 20px; background: #f8fbfd; }
+.csv-import h2 { margin: 0 0 7px; font-size: 1.25rem; }
+.csv-import p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
+.csv-import input[type="file"] { width: 100%; padding: 11px; border: 2px solid #cfdee7; border-radius: 14px; background: var(--white); }
+.csv-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .profile-screen { display: flex; align-items: center; justify-content: center; }
 .profile-card { margin: 0 auto; }
 .round-icon--profile { background: #fff1bc; color: #9a6500; }
 .profile-form { display: grid; gap: 12px; width: min(100%, 430px); margin: 25px auto 0; text-align: left; }
 .profile-form label { font-size: .92rem; font-weight: 850; }
-.profile-form input { min-height: 58px; padding: 11px 16px; border: 3px solid #cfdee7; border-radius: 17px; color: var(--ink); background: var(--white); font-size: 1.25rem; font-weight: 750; }
-.profile-form input:focus { border-color: var(--blue); outline: 3px solid rgba(61, 116, 185, .15); }
+.profile-form input, .profile-form select { min-height: 58px; padding: 11px 16px; border: 3px solid #cfdee7; border-radius: 17px; color: var(--ink); background: var(--white); font-size: 1.18rem; font-weight: 750; }
+.profile-form input:focus, .profile-form select:focus { border-color: var(--blue); outline: 3px solid rgba(61, 116, 185, .15); }
 
 .result-screen { display: flex; align-items: center; justify-content: center; }
 .result-card { margin: 0 auto; }
@@ -231,6 +237,7 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.05; letter-s
   .speed-summary { grid-template-columns: 1fr; }
   .add-word-form > div { grid-template-columns: 1fr; }
   .admin-status-row { align-items: flex-start; }
+  .csv-actions { flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {

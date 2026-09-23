@@ -1,3 +1,7 @@
 {
-  "customWords": []
+  "customWordsByGrade": {
+    "2": [],
+    "3": [],
+    "4": []
+  }
 }

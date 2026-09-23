@@ -1,18 +1,38 @@
 "use strict";
 
-const DEFAULT_WORDS = [
-  "aber", "alle", "also", "andere", "auch", "auf", "aus", "bei", "beide", "beim",
-  "dann", "darum", "das", "davon", "deine", "dieser", "doch", "dort", "durch", "eigentlich",
-  "einfach", "einmal", "etwas", "fast", "finden", "früher", "ganz", "gegen", "genau", "gestern",
-  "gleich", "groß", "haben", "heute", "hinter", "immer", "jetzt", "klein", "können", "lange",
-  "manchmal", "mehr", "mein", "mit", "müssen", "nach", "nicht", "noch", "nur", "oder",
-  "plötzlich", "schon", "sehr", "sein", "seit", "später", "über", "unter", "vielleicht", "vorher",
-  "warum", "weiter", "welche", "wenn", "wieder", "wirklich", "wollen", "zwischen", "Abenteuer", "Fenster",
-  "Freundschaft", "Gedanke", "Geschichte", "Geheimnis", "Morgen", "Schlüssel", "Schule", "Stunde", "Tasche", "Wasser"
-];
+const DEFAULT_WORDS_BY_GRADE = {
+  "2": [
+    "aber", "alle", "als", "am", "an", "auch", "auf", "aus", "bei", "bin", "bis", "da", "das", "dein", "der", "die",
+    "du", "ein", "eine", "er", "es", "für", "ganz", "hat", "heute", "hier", "ich", "im", "in", "ist", "ja", "kann",
+    "kein", "klein", "kommt", "machen", "man", "mehr", "mein", "mit", "muss", "nach", "nein", "nicht", "noch", "nur", "oder",
+    "schon", "sehr", "sie", "sind", "so", "über", "um", "und", "unser", "vom", "von", "vor", "war", "was", "weil", "wenn",
+    "wie", "wir", "wo", "zu", "zum", "Apfel", "Auto", "Ball", "Baum", "Buch", "Fenster", "Freund", "Garten", "Haus", "Hund",
+    "Kind", "Katze", "Schule", "Sonne", "Spiel", "Tag", "Wasser"
+  ],
+  "3": [
+    "aber", "alle", "also", "andere", "auch", "auf", "aus", "bei", "beide", "beim",
+    "dann", "darum", "das", "davon", "deine", "dieser", "doch", "dort", "durch", "eigentlich",
+    "einfach", "einmal", "etwas", "fast", "finden", "früher", "ganz", "gegen", "genau", "gestern",
+    "gleich", "groß", "haben", "heute", "hinter", "immer", "jetzt", "klein", "können", "lange",
+    "manchmal", "mehr", "mein", "mit", "müssen", "nach", "nicht", "noch", "nur", "oder",
+    "plötzlich", "schon", "sehr", "sein", "seit", "später", "über", "unter", "vielleicht", "vorher",
+    "warum", "weiter", "welche", "wenn", "wieder", "wirklich", "wollen", "zwischen", "Abenteuer", "Fenster",
+    "Freundschaft", "Gedanke", "Geschichte", "Geheimnis", "Morgen", "Schlüssel", "Schule", "Stunde", "Tasche", "Wasser"
+  ],
+  "4": [
+    "allerdings", "anschließend", "außerdem", "bereits", "besonders", "dadurch", "dagegen", "darüber", "darunter", "deshalb",
+    "dennoch", "eigentlich", "erneut", "gerade", "genauso", "gemeinsam", "häufig", "innerhalb", "inzwischen", "jedoch",
+    "manchmal", "meistens", "nämlich", "niemals", "obwohl", "plötzlich", "schließlich", "sobald", "sondern", "später",
+    "trotzdem", "ungefähr", "unterdessen", "vielleicht", "wahrscheinlich", "während", "wenigstens", "wirklich", "zuerst", "zuletzt",
+    "zwischen", "Aufgabe", "Bedeutung", "Beispiel", "Beobachtung", "Bewegung", "Entscheidung", "Entdeckung", "Erfahrung", "Ergebnis",
+    "Erklärung", "Gemeinschaft", "Geschwindigkeit", "Gespräch", "Information", "Möglichkeit", "Oberfläche", "Richtung", "Temperatur", "Umwelt",
+    "Unterschied", "Vergangenheit", "Verantwortung", "Zukunft", "Zusammenhang", "Abenteuer", "Gedanke", "Geheimnis", "Geschichte", "Schlüssel"
+  ]
+};
 
-let customWords = [];
-let WORDS = [...DEFAULT_WORDS];
+const emptyCustomWordLists = () => ({ "2": [], "3": [], "4": [] });
+let customWordsByGrade = emptyCustomWordLists();
+let WORDS = [...DEFAULT_WORDS_BY_GRADE["3"]];
 
 const MADE_UP = [
   "Flinter", "Bramel", "Korstig", "Taspel", "Wumper", "Glaspen", "Finterei", "Schlummerich", "Wolkigel", "Kreiselmut",
@@ -106,7 +126,8 @@ function loadProfile() {
   try {
     const saved = JSON.parse(localStorage.getItem("wortblitz-profile") || "null");
     if (!saved?.name) return null;
-    return { name: String(saved.name).slice(0, 24), points: Number(saved.points) || 0 };
+    const grade = [2, 3, 4].includes(Number(saved.grade)) ? Number(saved.grade) : 3;
+    return { name: String(saved.name).slice(0, 24), points: Number(saved.points) || 0, grade };
   } catch {
     return null;
   }
@@ -137,6 +158,16 @@ function updateStatsView() {
   $("#starCount").textContent = profile?.points || 0;
   $("#todayCorrect").textContent = stats.correct;
   $("#playerGreeting").textContent = profile ? `Hallo, ${profile.name}!` : "Wähle ein Spiel";
+  $("#playerGradeLabel").textContent = profile?.grade || 3;
+}
+
+function activeGrade() {
+  return String(profile?.grade || 3);
+}
+
+function applyActiveWordPool() {
+  const grade = activeGrade();
+  WORDS = [...DEFAULT_WORDS_BY_GRADE[grade], ...customWordsByGrade[grade]];
 }
 
 function addCorrect() {
@@ -163,8 +194,10 @@ function startPlayerProfile(event) {
     $("#playerName").focus();
     return;
   }
-  profile = { name: name.slice(0, 24), points: 0 };
+  const grade = Number($("#playerGradeSelect").value);
+  profile = { name: name.slice(0, 24), points: 0, grade: [2, 3, 4].includes(grade) ? grade : 3 };
   stats = { date: localDateKey(), correct: 0 };
+  applyActiveWordPool();
   saveProfile();
   saveStats();
   $("#playerName").value = "";
@@ -178,6 +211,7 @@ function resetPlayerProfile() {
   localStorage.removeItem("wortblitz-stats");
   profile = null;
   stats = { date: localDateKey(), correct: 0 };
+  applyActiveWordPool();
   updateStatsView();
   showScreen("profile");
 }
@@ -671,10 +705,10 @@ function replay() {
 
 const ADMIN_STORAGE_KEY = "wortblitz-admin-config-v1";
 
-function setCustomWords(words) {
-  const defaultKeys = new Set(DEFAULT_WORDS.map((word) => word.toLocaleLowerCase("de")));
+function normalizeCustomWords(words, grade) {
+  const defaultKeys = new Set(DEFAULT_WORDS_BY_GRADE[grade].map((word) => word.toLocaleLowerCase("de")));
   const seen = new Set();
-  customWords = words
+  return (Array.isArray(words) ? words : [])
     .map((word) => String(word).trim())
     .filter((word) => word && /^[A-Za-zÄÖÜäöüß-]+$/.test(word))
     .filter((word) => {
@@ -684,7 +718,22 @@ function setCustomWords(words) {
       return true;
     })
     .sort((a, b) => a.localeCompare(b, "de"));
-  WORDS = [...DEFAULT_WORDS, ...customWords];
+}
+
+function normalizeCustomWordData(data) {
+  const source = data?.customWordsByGrade && typeof data.customWordsByGrade === "object"
+    ? data.customWordsByGrade
+    : { "2": [], "3": Array.isArray(data?.customWords) ? data.customWords : Array.isArray(data) ? data : [], "4": [] };
+  return {
+    "2": normalizeCustomWords(source["2"], "2"),
+    "3": normalizeCustomWords(source["3"], "3"),
+    "4": normalizeCustomWords(source["4"], "4")
+  };
+}
+
+function setCustomWordData(data) {
+  customWordsByGrade = normalizeCustomWordData(data);
+  applyActiveWordPool();
   if (!$("#adminManagePanel").hidden) renderCustomWords();
 }
 
@@ -693,7 +742,7 @@ async function loadSharedWords() {
     const response = await fetch("words.json", { cache: "no-store" });
     if (!response.ok) throw new Error("Wortliste nicht erreichbar");
     const data = await response.json();
-    setCustomWords(Array.isArray(data.customWords) ? data.customWords : []);
+    setCustomWordData(data);
   } catch {
     // Offline bleibt die zuletzt geladene Wortliste aktiv.
   }
@@ -766,7 +815,10 @@ function showAdminPanel(panel) {
   if (panel === "login") {
     $("#adminLoginPanel").querySelector(".admin-intro").textContent = "Gib deine PIN ein, um die gemeinsame Wortliste zu bearbeiten.";
   }
-  if (panel === "manage") renderCustomWords();
+  if (panel === "manage") {
+    $("#customGradeSelect").value = activeGrade();
+    renderCustomWords();
+  }
 }
 
 function openAdmin() {
@@ -800,12 +852,13 @@ async function readGithubWords(config) {
   }
   const file = await response.json();
   const data = JSON.parse(base64ToText(file.content));
-  return { sha: file.sha, words: Array.isArray(data.customWords) ? data.customWords : [] };
+  return { sha: file.sha, lists: normalizeCustomWordData(data) };
 }
 
-async function writeGithubWords(config, words) {
+async function writeGithubWords(config, lists) {
   const current = await readGithubWords(config);
-  const content = `${JSON.stringify({ customWords: words }, null, 2)}\n`;
+  const normalizedLists = normalizeCustomWordData({ customWordsByGrade: lists });
+  const content = `${JSON.stringify({ customWordsByGrade: normalizedLists }, null, 2)}\n`;
   const response = await fetch(githubWordsUrl(config), {
     method: "PUT",
     headers: { ...githubHeaders(config), "Content-Type": "application/json" },
@@ -820,14 +873,16 @@ async function writeGithubWords(config, words) {
     const detail = await response.json().catch(() => ({}));
     throw new Error(detail.message || `GitHub-Fehler ${response.status}`);
   }
-  setCustomWords(words);
+  setCustomWordData({ customWordsByGrade: normalizedLists });
 }
 
 function renderCustomWords() {
-  $("#customWordCount").textContent = `${customWords.length} ${customWords.length === 1 ? "eigenes Wort" : "eigene Wörter"}`;
+  const grade = $("#customGradeSelect").value || activeGrade();
+  const words = customWordsByGrade[grade];
+  $("#customWordCount").textContent = `${words.length} ${words.length === 1 ? "eigenes Wort" : "eigene Wörter"} · Klasse ${grade}`;
   const list = $("#customWordList");
   list.replaceChildren();
-  customWords.forEach((word) => {
+  words.forEach((word) => {
     const item = document.createElement("span");
     item.className = "custom-word-item";
     item.append(document.createTextNode(word));
@@ -835,7 +890,7 @@ function renderCustomWords() {
     remove.type = "button";
     remove.textContent = "×";
     remove.setAttribute("aria-label", `${word} löschen`);
-    remove.addEventListener("click", () => removeCustomWord(word));
+    remove.addEventListener("click", () => removeCustomWord(word, grade));
     item.append(remove);
     list.append(item);
   });
@@ -860,7 +915,7 @@ async function saveAdminSetup() {
     const encrypted = await encryptAdminConfig(config, pin);
     localStorage.setItem(ADMIN_STORAGE_KEY, encrypted);
     state.adminSession = config;
-    setCustomWords(remote.words);
+    setCustomWordData({ customWordsByGrade: remote.lists });
     $("#adminToken").value = "";
     $("#adminPinSetup").value = "";
     $("#adminPinConfirm").value = "";
@@ -879,7 +934,7 @@ async function loginAdmin() {
     const config = await decryptAdminConfig(stored, pin);
     state.adminSession = config;
     const remote = await readGithubWords(config);
-    setCustomWords(remote.words);
+    setCustomWordData({ customWordsByGrade: remote.lists });
     $("#adminPinLogin").value = "";
     showAdminPanel("manage");
     setAdminStatus("Wortliste ist aktuell.", "good");
@@ -895,11 +950,14 @@ async function addCustomWord(event) {
   event.preventDefault();
   if (!state.adminSession) return;
   const word = $("#newWord").value.trim();
+  const grade = $("#customGradeSelect").value;
   if (!word || !/^[A-Za-zÄÖÜäöüß-]+$/.test(word)) return setAdminStatus("Bitte gib genau ein Wort ohne Leerzeichen ein.", "error");
-  if (WORDS.some((existing) => existing.toLocaleLowerCase("de") === word.toLocaleLowerCase("de"))) return setAdminStatus("Dieses Wort ist bereits vorhanden.", "error");
+  const gradeWords = [...DEFAULT_WORDS_BY_GRADE[grade], ...customWordsByGrade[grade]];
+  if (gradeWords.some((existing) => existing.toLocaleLowerCase("de") === word.toLocaleLowerCase("de"))) return setAdminStatus(`Dieses Wort ist in Klasse ${grade} bereits vorhanden.`, "error");
   setAdminStatus("Wort wird gespeichert …");
   try {
-    await writeGithubWords(state.adminSession, [...customWords, word].sort((a, b) => a.localeCompare(b, "de")));
+    const next = { ...customWordsByGrade, [grade]: [...customWordsByGrade[grade], word] };
+    await writeGithubWords(state.adminSession, next);
     $("#newWord").value = "";
     setAdminStatus("Gespeichert. Auf den Tablets erscheint das Wort nach der nächsten Aktualisierung.", "good");
   } catch (error) {
@@ -907,15 +965,103 @@ async function addCustomWord(event) {
   }
 }
 
-async function removeCustomWord(word) {
+async function removeCustomWord(word, grade) {
   if (!state.adminSession || !confirm(`„${word}“ wirklich aus der gemeinsamen Liste löschen?`)) return;
   setAdminStatus("Wort wird gelöscht …");
   try {
-    await writeGithubWords(state.adminSession, customWords.filter((item) => item !== word));
+    const next = { ...customWordsByGrade, [grade]: customWordsByGrade[grade].filter((item) => item !== word) };
+    await writeGithubWords(state.adminSession, next);
     setAdminStatus("Wort gelöscht. Die Tablets übernehmen die Änderung automatisch.", "good");
   } catch (error) {
     setAdminStatus(`Löschen fehlgeschlagen: ${error.message}`, "error");
   }
+}
+
+function parseCsvLine(line, delimiter) {
+  const cells = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === delimiter && !quoted) {
+      cells.push(cell.trim());
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+function parseCsvRows(text) {
+  const lines = String(text).replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
+  if (!lines.length) return [];
+  const candidates = [";", ",", "\t"];
+  const delimiter = candidates.sort((a, b) => (lines[0].split(b).length - lines[0].split(a).length))[0];
+  return lines.map((line) => parseCsvLine(line, delimiter));
+}
+
+async function importCsvWords() {
+  if (!state.adminSession) return;
+  const file = $("#csvFile").files[0];
+  if (!file) return setAdminStatus("Bitte wähle zuerst eine CSV-Datei aus.", "error");
+  let rows;
+  try {
+    rows = parseCsvRows(await file.text());
+  } catch {
+    return setAdminStatus("Die CSV-Datei konnte nicht gelesen werden.", "error");
+  }
+  if (!rows.length) return setAdminStatus("Die CSV-Datei ist leer.", "error");
+
+  const header = rows[0].map((cell) => cell.toLocaleLowerCase("de").trim());
+  const wordIndex = header.findIndex((cell) => ["wort", "word"].includes(cell));
+  const gradeIndex = header.findIndex((cell) => ["klasse", "klassenstufe", "jahrgang", "grade"].includes(cell));
+  const hasHeader = wordIndex >= 0 || gradeIndex >= 0;
+  const selectedGrade = $("#customGradeSelect").value;
+  const next = { "2": [...customWordsByGrade["2"]], "3": [...customWordsByGrade["3"]], "4": [...customWordsByGrade["4"]] };
+  const added = { "2": 0, "3": 0, "4": 0 };
+
+  rows.slice(hasHeader ? 1 : 0).forEach((row) => {
+    const detectedGrade = hasHeader && gradeIndex >= 0 ? row[gradeIndex] : (!hasHeader && /^[234]$/.test(row[0] || "") && row.length > 1 ? row[0] : selectedGrade);
+    const grade = String(detectedGrade || "").match(/[234]/)?.[0];
+    const word = String(hasHeader && wordIndex >= 0 ? row[wordIndex] : (!hasHeader && /^[234]$/.test(row[0] || "") && row.length > 1 ? row[1] : row[0]) || "").trim();
+    if (!grade || !/^[A-Za-zÄÖÜäöüß-]+$/.test(word)) return;
+    const existing = [...DEFAULT_WORDS_BY_GRADE[grade], ...next[grade]].some((item) => item.toLocaleLowerCase("de") === word.toLocaleLowerCase("de"));
+    if (!existing) {
+      next[grade].push(word);
+      added[grade] += 1;
+    }
+  });
+
+  const total = added["2"] + added["3"] + added["4"];
+  if (!total) return setAdminStatus("Keine neuen gültigen Wörter gefunden. Bitte prüfe Aufbau und Duplikate.", "error");
+  setAdminStatus(`${total} Wörter werden gespeichert …`);
+  try {
+    await writeGithubWords(state.adminSession, next);
+    $("#csvFile").value = "";
+    const details = ["2", "3", "4"].filter((grade) => added[grade]).map((grade) => `Klasse ${grade}: ${added[grade]}`).join(" · ");
+    setAdminStatus(`${total} Wörter importiert (${details}).`, "good");
+  } catch (error) {
+    setAdminStatus(`Import fehlgeschlagen: ${error.message}`, "error");
+  }
+}
+
+function downloadCsvTemplate() {
+  const content = "Klasse;Wort\n2;Beispielwort\n3;aufmerksam\n4;außergewöhnlich\n";
+  const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "wortblitz-vorlage.csv";
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function resetAdminSetup() {
@@ -941,6 +1087,9 @@ $("#saveAdminSetup").addEventListener("click", saveAdminSetup);
 $("#adminLogin").addEventListener("click", loginAdmin);
 $("#adminPinLogin").addEventListener("keydown", (event) => { if (event.key === "Enter") loginAdmin(); });
 $("#addWordForm").addEventListener("submit", addCustomWord);
+$("#customGradeSelect").addEventListener("change", renderCustomWords);
+$("#importCsvButton").addEventListener("click", importCsvWords);
+$("#downloadCsvTemplate").addEventListener("click", downloadCsvTemplate);
 $("#adminLogout").addEventListener("click", () => { state.adminSession = null; showAdminPanel("login"); });
 $("#resetAdminSetup").addEventListener("click", resetAdminSetup);
 
@@ -972,6 +1121,7 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(() => {}));
 }
 
+applyActiveWordPool();
 updateStatsView();
 setSoundButton();
 loadSharedWords();
