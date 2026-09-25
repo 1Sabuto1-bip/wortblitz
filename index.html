@@ -99,11 +99,11 @@
             <span class="card-arrow" aria-hidden="true">›</span>
           </button>
 
-          <button class="game-card game-card--syllable" type="button" data-open-game="syllable">
-            <span class="game-icon" aria-hidden="true">Sil</span>
+          <button class="game-card game-card--swing" type="button" data-open-game="swing">
+            <span class="game-icon" aria-hidden="true">∪</span>
             <span class="game-copy">
-              <strong>Silben-Sprung</strong>
-              <small>Silben lesen und Wörter bauen</small>
+              <strong>Silbenschwingen</strong>
+              <small>Silbenbögen mit dem Finger zeichnen</small>
             </span>
             <span class="card-arrow" aria-hidden="true">›</span>
           </button>
@@ -145,19 +145,19 @@
         </div>
       </section>
 
-      <section class="screen setup-screen" data-screen="syllable-setup" hidden>
+      <section class="screen setup-screen" data-screen="swing-setup" hidden>
         <button class="back-button" type="button" data-back-home>‹ Zurück</button>
         <div class="setup-card">
-          <div class="round-icon round-icon--syllable" aria-hidden="true">Sil</div>
-          <p class="eyebrow">Silben-Sprung</p>
-          <h1>Wie weit möchtest du springen?</h1>
-          <p class="setup-hint">Lies die Silben nacheinander. Setze sie danach zum richtigen Wort zusammen. Die Vokale sind blau markiert.</p>
-          <div class="level-list" role="radiogroup" aria-label="Schwierigkeitsstufe Silben-Sprung">
-            <button class="level-button" type="button" data-syllable-level="easy"><span class="level-icon" aria-hidden="true">🐸</span><span class="level-copy"><strong>Kleine Sprünge</strong><span>Kurze Wörter · ohne Ablenkung</span></span></button>
-            <button class="level-button selected" type="button" data-syllable-level="medium"><span class="level-icon" aria-hidden="true">🐇</span><span class="level-copy"><strong>Mittlere Sprünge</strong><span>2–3 Silben · eine Extrasilbe</span></span></button>
-            <button class="level-button" type="button" data-syllable-level="hard"><span class="level-icon" aria-hidden="true">🦘</span><span class="level-copy"><strong>Große Sprünge</strong><span>Lange Wörter · zwei Extrasilben</span></span></button>
+          <div class="round-icon round-icon--swing" aria-hidden="true">∪</div>
+          <p class="eyebrow">Silbenschwingen</p>
+          <h1>Wie lang sollen die Wörter sein?</h1>
+          <p class="setup-hint">Lies das Wort und zeichne mit dem Finger unter jede Silbe einen Bogen. Die Vokale sind blau markiert.</p>
+          <div class="level-list" role="radiogroup" aria-label="Wortlänge beim Silbenschwingen">
+            <button class="level-button" type="button" data-swing-level="easy"><span class="level-icon" aria-hidden="true">🐣</span><span class="level-copy"><strong>Kurz</strong><span>Meistens zwei Silben</span></span></button>
+            <button class="level-button selected" type="button" data-swing-level="medium"><span class="level-icon" aria-hidden="true">🐿️</span><span class="level-copy"><strong>Mittel</strong><span>Mittellange Wörter</span></span></button>
+            <button class="level-button" type="button" data-swing-level="hard"><span class="level-icon" aria-hidden="true">🦒</span><span class="level-copy"><strong>Lang</strong><span>Lange und schwierige Wörter</span></span></button>
           </div>
-          <button class="primary-button" id="startSyllable" type="button">Zehn Wörter starten</button>
+          <button class="primary-button" id="startSwing" type="button">Zehn Wörter starten</button>
         </div>
       </section>
 
@@ -243,24 +243,23 @@
         </div>
       </section>
 
-      <section class="screen play-screen" data-screen="syllable-play" hidden>
+      <section class="screen play-screen" data-screen="swing-play" hidden>
         <div class="play-header">
           <button class="close-button" type="button" data-back-home aria-label="Spiel beenden">×</button>
           <div class="progress-wrap">
-            <span id="syllableRoundLabel">Wort 1 von 10</span>
-            <div class="progress-track progress-track--syllable"><span id="syllableProgress"></span></div>
+            <span id="swingRoundLabel">Wort 1 von 10</span>
+            <div class="progress-track progress-track--swing"><span id="swingProgress"></span></div>
           </div>
-          <div class="mini-score"><span aria-hidden="true">★</span><strong id="syllableScore">0</strong></div>
+          <div class="mini-score swing-failures"><span>Fehler</span><strong id="swingFailures">0</strong></div>
         </div>
-        <div class="syllable-stage">
-          <p class="instruction" id="syllableInstruction">Mach dich bereit …</p>
-          <div class="syllable-preview" id="syllablePreview" aria-live="polite">•</div>
-          <div class="syllable-order" id="syllableOrder" hidden>
-            <div class="syllable-build" id="syllableBuild" aria-label="Dein Wort"></div>
-            <div class="syllable-bank" id="syllableBank" aria-label="Verfügbare Silben"></div>
-            <button class="primary-button" id="checkSyllable" type="button" disabled>Wort prüfen</button>
+        <div class="swing-stage">
+          <p class="instruction" id="swingInstruction">Zeichne unter jede Silbe einen Bogen.</p>
+          <div class="swing-drawing" id="swingDrawing">
+            <div class="swing-word" id="swingWord" aria-live="polite"></div>
+            <canvas id="swingCanvas" height="120" aria-label="Zeichenfläche für Silbenbögen"></canvas>
           </div>
-          <div class="feedback-line" id="syllableFeedback" aria-live="polite"></div>
+          <button class="secondary-button swing-clear" id="clearSwings" type="button">Bögen löschen</button>
+          <div class="feedback-line" id="swingFeedback" aria-live="polite"></div>
         </div>
       </section>
 
@@ -281,6 +280,10 @@
           <div class="speed-summary chain-summary" id="chainSummary" hidden>
             <div><span>Fehlversuche</span><strong id="chainFailureResult">0</strong></div>
             <div><span>Kette geschafft</span><strong>10 von 10</strong></div>
+          </div>
+          <div class="speed-summary" id="swingSummary" hidden>
+            <div><span>Fehlversuche</span><strong id="swingFailureResult">0</strong></div>
+            <div><span>Auf Anhieb</span><strong id="swingFirstTryResult">0 von 10</strong></div>
           </div>
           <div class="result-actions">
             <button class="primary-button" id="playAgain" type="button">Noch einmal</button>

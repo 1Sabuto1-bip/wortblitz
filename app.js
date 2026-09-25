@@ -143,14 +143,14 @@ const SYLLABLE_WORDS_BY_GRADE = {
   }
 };
 
-const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5, syllable: 10 };
+const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5, swing: 10 };
 const screens = [...document.querySelectorAll("[data-screen]")];
 const state = {
   sound: localStorage.getItem("wortblitz-sound") !== "off",
   flashSpeed: 900,
   flashChoiceCount: 4,
   sentenceLevel: "medium",
-  syllableLevel: "medium",
+  swingLevel: "medium",
   game: null,
   index: 0,
   score: 0,
@@ -171,13 +171,13 @@ const state = {
   sentenceAttempts: 0,
   sentenceBank: [],
   sentenceBuilt: [],
-  syllableSet: [],
-  syllableIndex: 0,
-  syllableScore: 0,
-  syllableFirstTry: 0,
-  syllableRoundAttempts: 0,
-  syllableBank: [],
-  syllableBuilt: [],
+  swingSet: [],
+  swingIndex: 0,
+  swingFirstTry: 0,
+  swingRoundAttempts: 0,
+  swingFailures: 0,
+  swingStrokes: [],
+  activeStroke: null,
   adminSession: null,
   locked: false
 };
@@ -394,7 +394,7 @@ function openGame(game) {
   if (game === "chain") startChain();
   if (game === "real") startReal();
   if (game === "sentence") showScreen("sentence-setup");
-  if (game === "syllable") showScreen("syllable-setup");
+  if (game === "swing") showScreen("swing-setup");
 }
 
 function startFlash() {
@@ -760,171 +760,213 @@ function appendVowelText(element, text) {
   });
 }
 
-function syllableLevelSettings() {
-  return {
-    easy: { preview: 1200, distractors: 0 },
-    medium: { preview: 900, distractors: 1 },
-    hard: { preview: 650, distractors: 2 }
-  }[state.syllableLevel];
-}
-
-function startSyllable() {
+function startSwing() {
   const grade = activeGrade();
   Object.assign(state, {
-    game: "syllable",
-    syllableSet: sample(SYLLABLE_WORDS_BY_GRADE[grade][state.syllableLevel], TOTALS.syllable),
-    syllableIndex: 0,
-    syllableScore: 0,
-    syllableFirstTry: 0,
-    syllableRoundAttempts: 0,
-    syllableBank: [],
-    syllableBuilt: [],
+    game: "swing",
+    swingSet: sample(SYLLABLE_WORDS_BY_GRADE[grade][state.swingLevel], TOTALS.swing),
+    swingIndex: 0,
+    swingFirstTry: 0,
+    swingRoundAttempts: 0,
+    swingFailures: 0,
+    swingStrokes: [],
+    activeStroke: null,
     locked: false
   });
-  showScreen("syllable-play");
-  nextSyllableWord();
+  showScreen("swing-play");
+  nextSwingWord();
 }
 
-function updateSyllableHeader() {
-  $("#syllableRoundLabel").textContent = `Wort ${state.syllableIndex + 1} von ${TOTALS.syllable}`;
-  $("#syllableProgress").style.width = `${(state.syllableIndex / TOTALS.syllable) * 100}%`;
-  $("#syllableScore").textContent = state.syllableScore;
+function updateSwingHeader() {
+  $("#swingRoundLabel").textContent = `Wort ${state.swingIndex + 1} von ${TOTALS.swing}`;
+  $("#swingProgress").style.width = `${(state.swingIndex / TOTALS.swing) * 100}%`;
+  $("#swingFailures").textContent = state.swingFailures;
 }
 
-function nextSyllableWord() {
-  if (state.syllableIndex >= TOTALS.syllable) return finishGame("syllable");
-  state.current = state.syllableSet[state.syllableIndex];
-  state.syllableRoundAttempts = 0;
-  state.syllableBuilt = [];
-  state.locked = true;
-  updateSyllableHeader();
-  $("#syllableInstruction").textContent = "Lies die Silben nacheinander.";
-  $("#syllableOrder").hidden = true;
-  $("#syllablePreview").hidden = false;
-  $("#syllablePreview").replaceChildren();
-  $("#syllablePreview").removeAttribute("aria-label");
-  $("#syllablePreview").textContent = "•";
-  $("#syllableFeedback").textContent = "";
-  $("#syllableFeedback").className = "feedback-line";
-
-  const syllables = state.current.slice(1);
-  const settings = syllableLevelSettings();
-  syllables.forEach((syllable, index) => {
-    later(() => {
-      $("#syllablePreview").replaceChildren();
-      appendVowelText($("#syllablePreview"), syllable);
-    }, 500 + index * settings.preview);
+function renderSwingWord() {
+  const word = $("#swingWord");
+  word.replaceChildren();
+  word.setAttribute("aria-label", state.current[0]);
+  state.current.slice(1).forEach((syllable) => {
+    const part = document.createElement("span");
+    part.className = "swing-syllable";
+    appendVowelText(part, syllable);
+    word.append(part);
   });
-  later(prepareSyllableOrder, 500 + syllables.length * settings.preview);
 }
 
-function prepareSyllableOrder() {
-  const correctSyllables = state.current.slice(1);
-  const gradePool = SYLLABLE_WORDS_BY_GRADE[activeGrade()][state.syllableLevel].flatMap((entry) => entry.slice(1));
-  const distractorTexts = sample(
-    [...new Set(gradePool.filter((syllable) => !correctSyllables.includes(syllable)))],
-    syllableLevelSettings().distractors
-  );
-  const correctItems = correctSyllables.map((text, correctIndex) => ({
-    id: `correct-${state.syllableIndex}-${correctIndex}`,
-    text,
-    correctIndex
-  }));
-  const distractors = distractorTexts.map((text, index) => ({
-    id: `extra-${state.syllableIndex}-${index}`,
-    text,
-    correctIndex: -1
-  }));
-  state.syllableBank = shuffle([...correctItems, ...distractors]);
-  state.syllableBuilt = [];
-  state.locked = false;
-  $("#syllablePreview").hidden = true;
-  $("#syllableOrder").hidden = false;
-  $("#syllableInstruction").textContent = "Baue das Wort aus den richtigen Silben.";
-  renderSyllableOrder();
+function resizeSwingCanvas() {
+  const canvas = $("#swingCanvas");
+  const drawing = $("#swingDrawing");
+  const wordWidth = Math.ceil($("#swingWord").scrollWidth);
+  const availableWidth = Math.max(260, drawing.parentElement.clientWidth - 24);
+  const width = Math.min(availableWidth, Math.max(260, wordWidth));
+  const height = 120;
+  const ratio = Math.max(1, window.devicePixelRatio || 1);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
+  const context = canvas.getContext("2d");
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  drawSwingStrokes();
 }
 
-function makeSyllableChip(item, fromBank) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "syllable-chip";
-  appendVowelText(button, item.text);
-  button.addEventListener("click", () => moveSyllable(item.id, fromBank));
-  return button;
+function drawSwingStrokes(color = "#173f5f") {
+  const canvas = $("#swingCanvas");
+  const context = canvas.getContext("2d");
+  const width = parseFloat(canvas.style.width) || canvas.clientWidth;
+  const height = parseFloat(canvas.style.height) || canvas.clientHeight;
+  context.clearRect(0, 0, width, height);
+  context.lineWidth = 7;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.strokeStyle = color;
+  [...state.swingStrokes, ...(state.activeStroke ? [state.activeStroke] : [])].forEach((stroke) => {
+    if (stroke.length < 2) return;
+    context.beginPath();
+    context.moveTo(stroke[0].x, stroke[0].y);
+    stroke.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+    context.stroke();
+  });
 }
 
-function renderSyllableOrder() {
-  const build = $("#syllableBuild");
-  const bank = $("#syllableBank");
-  build.replaceChildren();
-  bank.replaceChildren();
-  state.syllableBuilt.forEach((item) => build.append(makeSyllableChip(item, false)));
-  state.syllableBank.forEach((item) => bank.append(makeSyllableChip(item, true)));
-  const needed = state.current.slice(1).length;
-  $("#checkSyllable").disabled = state.locked || state.syllableBuilt.length !== needed;
+function swingPoint(event) {
+  const bounds = $("#swingCanvas").getBoundingClientRect();
+  return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
 }
 
-function moveSyllable(id, fromBank) {
-  if (state.locked) return;
-  const source = fromBank ? state.syllableBank : state.syllableBuilt;
-  const destination = fromBank ? state.syllableBuilt : state.syllableBank;
-  const index = source.findIndex((item) => item.id === id);
-  if (index < 0) return;
-  if (fromBank && state.syllableBuilt.length >= state.current.slice(1).length) return;
-  destination.push(source.splice(index, 1)[0]);
-  $("#syllableFeedback").textContent = "";
-  renderSyllableOrder();
+function beginSwing(event) {
+  if (state.locked || state.activeStroke) return;
+  event.preventDefault();
+  $("#swingCanvas").setPointerCapture(event.pointerId);
+  state.activeStroke = [swingPoint(event)];
+  $("#swingFeedback").textContent = "";
+  $("#swingFeedback").className = "feedback-line";
 }
 
-function checkSyllableWord() {
-  if (state.locked) return;
-  const correctSyllables = state.current.slice(1);
-  const isCorrect = state.syllableBuilt.every((item, index) => item.text === correctSyllables[index]);
+function continueSwing(event) {
+  if (!state.activeStroke || state.locked) return;
+  event.preventDefault();
+  state.activeStroke.push(swingPoint(event));
+  drawSwingStrokes();
+}
+
+function endSwing(event) {
+  if (!state.activeStroke || state.locked) return;
+  event.preventDefault();
+  state.activeStroke.push(swingPoint(event));
+  if (state.activeStroke.length >= 3) state.swingStrokes.push(state.activeStroke);
+  state.activeStroke = null;
+  drawSwingStrokes();
+  if (state.swingStrokes.length >= state.current.slice(1).length) checkSwingStrokes();
+}
+
+function expectedSwingAreas() {
+  const canvasBounds = $("#swingCanvas").getBoundingClientRect();
+  return $$("#swingWord .swing-syllable").map((part) => {
+    const bounds = part.getBoundingClientRect();
+    return {
+      left: bounds.left - canvasBounds.left,
+      right: bounds.right - canvasBounds.left,
+      center: (bounds.left + bounds.right) / 2 - canvasBounds.left,
+      width: bounds.width
+    };
+  });
+}
+
+function strokeLooksLikeArc(stroke, area) {
+  const xs = stroke.map((point) => point.x);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const center = (minX + maxX) / 2;
+  const width = maxX - minX;
+  const forwardStroke = stroke[0].x <= stroke[stroke.length - 1].x ? stroke : [...stroke].reverse();
+  const edgeY = (forwardStroke[0].y + forwardStroke[forwardStroke.length - 1].y) / 2;
+  const middle = forwardStroke.filter((point) => point.x > minX + width * .3 && point.x < maxX - width * .3);
+  const middleY = middle.length ? middle.reduce((sum, point) => sum + point.y, 0) / middle.length : edgeY;
+  const centerTolerance = Math.max(26, area.width * .42);
+  return Math.abs(center - area.center) <= centerTolerance
+    && width >= area.width * .42
+    && width <= area.width * 1.7
+    && middleY >= edgeY + 3;
+}
+
+function checkSwingStrokes() {
+  state.locked = true;
+  const areas = expectedSwingAreas();
+  const strokes = [...state.swingStrokes].sort((a, b) => {
+    const centerA = (Math.min(...a.map((point) => point.x)) + Math.max(...a.map((point) => point.x))) / 2;
+    const centerB = (Math.min(...b.map((point) => point.x)) + Math.max(...b.map((point) => point.x))) / 2;
+    return centerA - centerB;
+  });
+  const isCorrect = strokes.length === areas.length && strokes.every((stroke, index) => strokeLooksLikeArc(stroke, areas[index]));
+
   if (isCorrect) {
-    state.locked = true;
-    state.syllableScore += 1;
-    if (state.syllableRoundAttempts === 0) state.syllableFirstTry += 1;
+    if (state.swingRoundAttempts === 0) state.swingFirstTry += 1;
     addCorrect();
     beep(true);
-    $("#syllableScore").textContent = state.syllableScore;
-    $("#syllableFeedback").replaceChildren();
-    $("#syllableFeedback").append(document.createTextNode("Richtig: "));
-    const resultWord = document.createElement("strong");
-    appendVowelText(resultWord, state.current[0]);
-    $("#syllableFeedback").append(resultWord);
-    $("#syllableFeedback").className = "feedback-line good";
-    renderSyllableOrder();
-    state.syllableIndex += 1;
-    later(nextSyllableWord, 1400);
+    drawSwingStrokes("#16766b");
+    $("#swingDrawing").classList.add("is-correct");
+    $("#swingFeedback").textContent = "Richtig geschwungen!";
+    $("#swingFeedback").className = "feedback-line good";
+    state.swingIndex += 1;
+    later(nextSwingWord, 1250);
     return;
   }
 
-  state.locked = true;
-  state.syllableRoundAttempts += 1;
+  state.swingRoundAttempts += 1;
+  state.swingFailures += 1;
+  $("#swingFailures").textContent = state.swingFailures;
   beep(false);
-  $("#syllableFeedback").textContent = "Noch nicht ganz. Lies die Silben erneut.";
-  $("#syllableFeedback").className = "feedback-line try";
-  renderSyllableOrder();
+  drawSwingStrokes("#b45038");
+  $("#swingDrawing").classList.add("is-wrong");
+  $("#swingFeedback").textContent = "Noch nicht ganz. Zeichne für jede Silbe einen Bogen.";
+  $("#swingFeedback").className = "feedback-line try";
   later(() => {
-    state.syllableBank = shuffle([...state.syllableBank, ...state.syllableBuilt]);
-    state.syllableBuilt = [];
+    clearSwingStrokes();
     state.locked = false;
-    renderSyllableOrder();
-  }, 1000);
+  }, 1100);
+}
+
+function clearSwingStrokes() {
+  state.swingStrokes = [];
+  state.activeStroke = null;
+  $("#swingDrawing").classList.remove("is-correct", "is-wrong");
+  $("#swingFeedback").textContent = "";
+  $("#swingFeedback").className = "feedback-line";
+  drawSwingStrokes();
+}
+
+function nextSwingWord() {
+  if (state.swingIndex >= TOTALS.swing) return finishGame("swing");
+  state.current = state.swingSet[state.swingIndex];
+  state.swingRoundAttempts = 0;
+  state.swingStrokes = [];
+  state.activeStroke = null;
+  state.locked = false;
+  updateSwingHeader();
+  renderSwingWord();
+  const syllableCount = state.current.length - 1;
+  $("#swingInstruction").textContent = `Zeichne ${syllableCount} ${syllableCount === 1 ? "Silbenbogen" : "Silbenbögen"}.`;
+  $("#swingFeedback").textContent = "";
+  $("#swingFeedback").className = "feedback-line";
+  $("#swingDrawing").classList.remove("is-correct", "is-wrong");
+  requestAnimationFrame(resizeSwingCanvas);
 }
 
 function finishGame(game) {
   const total = game === "sentence" ? state.sentenceTotalWords : TOTALS[game];
-  const score = game === "sentence" ? state.sentenceWordScore : game === "syllable" ? state.syllableScore : state.score;
-  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz", syllable: "Silben-Sprung" };
+  const score = game === "sentence" ? state.sentenceWordScore : game === "swing" ? TOTALS.swing : state.score;
+  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz", swing: "Silbenschwingen" };
   const sentenceLevels = { easy: "kurz", medium: "mittel", hard: "lang" };
   $("#resultGame").textContent = game === "sentence" ? `${titles[game]} · ${sentenceLevels[state.sentenceLevel]}` : `${titles[game]} geschafft`;
   let resultTitle = score === total ? "Starke Runde!" : score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
   if (game === "chain") {
     resultTitle = state.chainFailures === 0 ? "Wow! Beim ersten Versuch!" : state.chainFailures <= 2 ? "Geschafft!" : "Du musst noch etwas üben.";
   }
-  if (game === "syllable") {
-    resultTitle = state.syllableFirstTry === TOTALS.syllable ? "Wow! Alles beim ersten Versuch!" : state.syllableScore === TOTALS.syllable ? "Silben-Profi!" : "Gut gesprungen!";
+  if (game === "swing") {
+    resultTitle = state.swingFirstTry === TOTALS.swing ? "Wow! Alles beim ersten Versuch!" : state.swingFailures <= 3 ? "Silben-Profi!" : "Gut geschwungen!";
   }
   $("#resultTitle").textContent = resultTitle;
   $("#resultScore").textContent = score;
@@ -932,6 +974,7 @@ function finishGame(game) {
   $("#speedSummary").hidden = game !== "flash";
   $("#sentenceSummary").hidden = game !== "sentence";
   $("#chainSummary").hidden = game !== "chain";
+  $("#swingSummary").hidden = game !== "swing";
   if (game === "flash") {
     const average = state.times.length ? state.times.reduce((sum, time) => sum + time, 0) / state.times.length : 0;
     const best = state.times.length ? Math.min(...state.times) : 0;
@@ -943,6 +986,10 @@ function finishGame(game) {
     $("#sentenceFirstTryResult").textContent = `${state.sentenceFirstTry} von ${TOTALS.sentence}`;
   }
   if (game === "chain") $("#chainFailureResult").textContent = state.chainFailures;
+  if (game === "swing") {
+    $("#swingFailureResult").textContent = state.swingFailures;
+    $("#swingFirstTryResult").textContent = `${state.swingFirstTry} von ${TOTALS.swing}`;
+  }
   showScreen("result");
 }
 
@@ -951,7 +998,7 @@ function replay() {
   if (state.game === "chain") startChain();
   if (state.game === "real") startReal();
   if (state.game === "sentence") startSentence();
-  if (state.game === "syllable") startSyllable();
+  if (state.game === "swing") startSwing();
 }
 
 const ADMIN_STORAGE_KEY = "wortblitz-admin-config-v1";
@@ -1330,12 +1377,16 @@ $("#resetProfileButton").addEventListener("click", resetPlayerProfile);
 $("#adminButton").addEventListener("click", openAdmin);
 $("#startFlash").addEventListener("click", startFlash);
 $("#startSentence").addEventListener("click", startSentence);
-$("#startSyllable").addEventListener("click", startSyllable);
+$("#startSwing").addEventListener("click", startSwing);
 $("#playAgain").addEventListener("click", replay);
 $("#answerReal").addEventListener("click", () => answerReal(true));
 $("#answerMade").addEventListener("click", () => answerReal(false));
 $("#checkSentence").addEventListener("click", checkSentenceOrder);
-$("#checkSyllable").addEventListener("click", checkSyllableWord);
+$("#swingCanvas").addEventListener("pointerdown", beginSwing);
+$("#swingCanvas").addEventListener("pointermove", continueSwing);
+$("#swingCanvas").addEventListener("pointerup", endSwing);
+$("#swingCanvas").addEventListener("pointercancel", () => { state.activeStroke = null; drawSwingStrokes(); });
+$("#clearSwings").addEventListener("click", () => { if (!state.locked) clearSwingStrokes(); });
 $("#saveAdminSetup").addEventListener("click", saveAdminSetup);
 $("#adminLogin").addEventListener("click", loginAdmin);
 $("#adminPinLogin").addEventListener("keydown", (event) => { if (event.key === "Enter") loginAdmin(); });
@@ -1363,12 +1414,16 @@ $$('[data-sentence-level]').forEach((button) => {
   });
 });
 
-$$('[data-syllable-level]').forEach((button) => {
+$$('[data-swing-level]').forEach((button) => {
   button.addEventListener("click", () => {
-    $$('[data-syllable-level]').forEach((item) => item.classList.remove("selected"));
+    $$('[data-swing-level]').forEach((item) => item.classList.remove("selected"));
     button.classList.add("selected");
-    state.syllableLevel = button.dataset.syllableLevel;
+    state.swingLevel = button.dataset.swingLevel;
   });
+});
+
+window.addEventListener("resize", () => {
+  if (!$("[data-screen='swing-play']").hidden) resizeSwingCanvas();
 });
 
 $("#soundButton").addEventListener("click", () => {
