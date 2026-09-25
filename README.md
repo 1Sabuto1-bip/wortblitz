@@ -1,11 +1,12 @@
 # Wortblitz – Lesetraining für Klasse 2 bis 4
 
-Eine statische, datensparsame Web-App mit vier Übungen:
+Eine statische, datensparsame Web-App mit fünf Übungen:
 
 - **Blitzwort:** 20 Wörter mit vier Schwierigkeitsstufen. Anzeigedauer und Auswahlmenge steigen von vier auf sechs Wörter.
 - **Lesekette:** Zehn Wörter nacheinander aus jeweils zwölf Möglichkeiten erkennen. Ein Fehler setzt die Kette zurück; Fehlversuche werden ausgewertet.
 - **Satzblitz:** Wörter nacheinander kurz sehen, wiedererkennen und fünf vollständige Sätze ordnen. Drei Stufen steuern die Satzlänge.
 - **Richtig oder erfunden?:** Echte Wörter von lauttreuen Fantasiewörtern unterscheiden.
+- **Silben-Sprung:** Zehn Wörter aus farbig unterstützten Silben zusammensetzen. Drei Stufen steuern Wortlänge, Anzeigedauer und Ablenksilben; alle Vokale werden blau markiert.
 
 Zu Beginn gibt jedes Kind seinen Namen und seine Klassenstufe (2, 3 oder 4) ein. Alle Wortspiele greifen anschließend auf einen passenden Grundwortschatz und die zusätzlichen Wörter dieser Klassenstufe zu. Name, Klasse, Gesamtpunkte, Tagesfortschritt und Toneinstellung werden ausschließlich lokal im Browser des jeweiligen Tablets gespeichert. Der Reset-Knopf löscht nur dieses Kinderprofil; Adminzugang und gemeinsame Wortlisten bleiben erhalten. Eigene Wörter liegen nach Klassen getrennt in `words.json` und werden von allen Tablets regelmäßig neu geladen.
 

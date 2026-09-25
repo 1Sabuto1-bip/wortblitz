@@ -76,13 +76,81 @@ const SENTENCES = {
   ]
 };
 
-const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5 };
+const SYLLABLE_WORDS_BY_GRADE = {
+  "2": {
+    easy: [
+      ["Hase", "Ha", "se"], ["Nase", "Na", "se"], ["Dose", "Do", "se"], ["Rose", "Ro", "se"],
+      ["Lama", "La", "ma"], ["Sofa", "So", "fa"], ["Maler", "Ma", "ler"], ["lesen", "le", "sen"],
+      ["Rabe", "Ra", "be"], ["Igel", "I", "gel"], ["Schule", "Schu", "le"], ["Tiger", "Ti", "ger"]
+    ],
+    medium: [
+      ["Laterne", "La", "ter", "ne"], ["Banane", "Ba", "na", "ne"], ["Tomate", "To", "ma", "te"],
+      ["Rakete", "Ra", "ke", "te"], ["Melone", "Me", "lo", "ne"], ["Computer", "Com", "pu", "ter"],
+      ["Papagei", "Pa", "pa", "gei"], ["Telefon", "Te", "le", "fon"], ["Kamera", "Ka", "me", "ra"],
+      ["Domino", "Do", "mi", "no"], ["Salami", "Sa", "la", "mi"], ["Kino", "Ki", "no"]
+    ],
+    hard: [
+      ["Sonnenblume", "Son", "nen", "blu", "me"], ["Schokolade", "Scho", "ko", "la", "de"],
+      ["Schmetterling", "Schmet", "ter", "ling"], ["Geburtstag", "Ge", "burts", "tag"],
+      ["Abenteuer", "A", "ben", "teu", "er"], ["Feuerwehr", "Feu", "er", "wehr"],
+      ["Regenbogen", "Re", "gen", "bo", "gen"], ["Kindergarten", "Kin", "der", "gar", "ten"],
+      ["Elefant", "E", "le", "fant"], ["Bibliothek", "Bib", "li", "o", "thek"],
+      ["Krokodil", "Kro", "ko", "dil"], ["Lokomotive", "Lo", "ko", "mo", "ti", "ve"]
+    ]
+  },
+  "3": {
+    easy: [
+      ["Fenster", "Fens", "ter"], ["Tasche", "Ta", "sche"], ["Schlüssel", "Schlüs", "sel"], ["Schule", "Schu", "le"],
+      ["Wasser", "Was", "ser"], ["Morgen", "Mor", "gen"], ["Stunde", "Stun", "de"], ["finden", "fin", "den"],
+      ["gestern", "ges", "tern"], ["weiter", "wei", "ter"], ["heute", "heu", "te"], ["Pause", "Pau", "se"]
+    ],
+    medium: [
+      ["gemeinsam", "ge", "mein", "sam"], ["Geschichte", "Ge", "schich", "te"], ["Geheimnis", "Ge", "heim", "nis"],
+      ["Abenteuer", "A", "ben", "teu", "er"], ["Freundschaft", "Freund", "schaft"], ["plötzlich", "plötz", "lich"],
+      ["vielleicht", "viel", "leicht"], ["wirklich", "wirk", "lich"], ["vorher", "vor", "her"],
+      ["später", "spä", "ter"], ["eigentlich", "ei", "gent", "lich"], ["einfach", "ein", "fach"]
+    ],
+    hard: [
+      ["Aufmerksamkeit", "Auf", "merk", "sam", "keit"], ["Geschwindigkeit", "Ge", "schwin", "dig", "keit"],
+      ["Lieblingsgeschichte", "Lieb", "lings", "ge", "schich", "te"], ["Überraschung", "Über", "ra", "schung"],
+      ["Entdeckung", "Ent", "de", "ckung"], ["Vergangenheit", "Ver", "gan", "gen", "heit"],
+      ["Schmetterling", "Schmet", "ter", "ling"], ["Sonnenstrahlen", "Son", "nen", "strah", "len"],
+      ["Klassenzimmer", "Klas", "sen", "zim", "mer"], ["Hausaufgaben", "Haus", "auf", "ga", "ben"],
+      ["Lieblingsessen", "Lieb", "lings", "es", "sen"], ["Ferienreise", "Fe", "ri", "en", "rei", "se"]
+    ]
+  },
+  "4": {
+    easy: [
+      ["Richtung", "Rich", "tung"], ["Umwelt", "Um", "welt"], ["Gespräch", "Ge", "spräch"], ["Zukunft", "Zu", "kunft"],
+      ["Beispiel", "Bei", "spiel"], ["Schlüssel", "Schlüs", "sel"], ["häufig", "häu", "fig"], ["trotzdem", "trotz", "dem"],
+      ["wirklich", "wirk", "lich"], ["deshalb", "des", "halb"], ["später", "spä", "ter"], ["niemals", "nie", "mals"]
+    ],
+    medium: [
+      ["Bedeutung", "Be", "deu", "tung"], ["Bewegung", "Be", "we", "gung"], ["Erfahrung", "Er", "fah", "rung"],
+      ["Ergebnis", "Er", "geb", "nis"], ["Erklärung", "Er", "klä", "rung"], ["Unterschied", "Un", "ter", "schied"],
+      ["Möglichkeit", "Mög", "lich", "keit"], ["Zusammenhang", "Zu", "sam", "men", "hang"],
+      ["Gemeinschaft", "Ge", "mein", "schaft"], ["Entscheidung", "Ent", "schei", "dung"],
+      ["allerdings", "al", "ler", "dings"], ["inzwischen", "in", "zwi", "schen"]
+    ],
+    hard: [
+      ["Geschwindigkeit", "Ge", "schwin", "dig", "keit"], ["Information", "In", "for", "ma", "ti", "on"],
+      ["Oberfläche", "O", "ber", "flä", "che"], ["Wahrscheinlichkeit", "Wahr", "schein", "lich", "keit"],
+      ["außergewöhnlich", "au", "ßer", "ge", "wöhn", "lich"], ["Verantwortung", "Ver", "ant", "wor", "tung"],
+      ["Beobachtung", "Be", "ob", "ach", "tung"], ["unterdessen", "un", "ter", "des", "sen"],
+      ["Vergangenheit", "Ver", "gan", "gen", "heit"], ["Temperatur", "Tem", "pe", "ra", "tur"],
+      ["Entdeckungsreise", "Ent", "de", "ckungs", "rei", "se"], ["Zusammenarbeit", "Zu", "sam", "men", "ar", "beit"]
+    ]
+  }
+};
+
+const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5, syllable: 10 };
 const screens = [...document.querySelectorAll("[data-screen]")];
 const state = {
   sound: localStorage.getItem("wortblitz-sound") !== "off",
   flashSpeed: 900,
   flashChoiceCount: 4,
   sentenceLevel: "medium",
+  syllableLevel: "medium",
   game: null,
   index: 0,
   score: 0,
@@ -103,6 +171,13 @@ const state = {
   sentenceAttempts: 0,
   sentenceBank: [],
   sentenceBuilt: [],
+  syllableSet: [],
+  syllableIndex: 0,
+  syllableScore: 0,
+  syllableFirstTry: 0,
+  syllableRoundAttempts: 0,
+  syllableBank: [],
+  syllableBuilt: [],
   adminSession: null,
   locked: false
 };
@@ -319,6 +394,7 @@ function openGame(game) {
   if (game === "chain") startChain();
   if (game === "real") startReal();
   if (game === "sentence") showScreen("sentence-setup");
+  if (game === "syllable") showScreen("syllable-setup");
 }
 
 function startFlash() {
@@ -666,15 +742,189 @@ function checkSentenceOrder() {
   }, 1000);
 }
 
+function appendVowelText(element, text) {
+  element.setAttribute("aria-label", text);
+  [...text].forEach((character) => {
+    if (/[AEIOUÄÖÜaeiouäöü]/.test(character)) {
+      const vowel = document.createElement("span");
+      vowel.className = "vowel";
+      vowel.textContent = character;
+      vowel.setAttribute("aria-hidden", "true");
+      element.append(vowel);
+    } else {
+      const consonant = document.createElement("span");
+      consonant.textContent = character;
+      consonant.setAttribute("aria-hidden", "true");
+      element.append(consonant);
+    }
+  });
+}
+
+function syllableLevelSettings() {
+  return {
+    easy: { preview: 1200, distractors: 0 },
+    medium: { preview: 900, distractors: 1 },
+    hard: { preview: 650, distractors: 2 }
+  }[state.syllableLevel];
+}
+
+function startSyllable() {
+  const grade = activeGrade();
+  Object.assign(state, {
+    game: "syllable",
+    syllableSet: sample(SYLLABLE_WORDS_BY_GRADE[grade][state.syllableLevel], TOTALS.syllable),
+    syllableIndex: 0,
+    syllableScore: 0,
+    syllableFirstTry: 0,
+    syllableRoundAttempts: 0,
+    syllableBank: [],
+    syllableBuilt: [],
+    locked: false
+  });
+  showScreen("syllable-play");
+  nextSyllableWord();
+}
+
+function updateSyllableHeader() {
+  $("#syllableRoundLabel").textContent = `Wort ${state.syllableIndex + 1} von ${TOTALS.syllable}`;
+  $("#syllableProgress").style.width = `${(state.syllableIndex / TOTALS.syllable) * 100}%`;
+  $("#syllableScore").textContent = state.syllableScore;
+}
+
+function nextSyllableWord() {
+  if (state.syllableIndex >= TOTALS.syllable) return finishGame("syllable");
+  state.current = state.syllableSet[state.syllableIndex];
+  state.syllableRoundAttempts = 0;
+  state.syllableBuilt = [];
+  state.locked = true;
+  updateSyllableHeader();
+  $("#syllableInstruction").textContent = "Lies die Silben nacheinander.";
+  $("#syllableOrder").hidden = true;
+  $("#syllablePreview").hidden = false;
+  $("#syllablePreview").replaceChildren();
+  $("#syllablePreview").removeAttribute("aria-label");
+  $("#syllablePreview").textContent = "•";
+  $("#syllableFeedback").textContent = "";
+  $("#syllableFeedback").className = "feedback-line";
+
+  const syllables = state.current.slice(1);
+  const settings = syllableLevelSettings();
+  syllables.forEach((syllable, index) => {
+    later(() => {
+      $("#syllablePreview").replaceChildren();
+      appendVowelText($("#syllablePreview"), syllable);
+    }, 500 + index * settings.preview);
+  });
+  later(prepareSyllableOrder, 500 + syllables.length * settings.preview);
+}
+
+function prepareSyllableOrder() {
+  const correctSyllables = state.current.slice(1);
+  const gradePool = SYLLABLE_WORDS_BY_GRADE[activeGrade()][state.syllableLevel].flatMap((entry) => entry.slice(1));
+  const distractorTexts = sample(
+    [...new Set(gradePool.filter((syllable) => !correctSyllables.includes(syllable)))],
+    syllableLevelSettings().distractors
+  );
+  const correctItems = correctSyllables.map((text, correctIndex) => ({
+    id: `correct-${state.syllableIndex}-${correctIndex}`,
+    text,
+    correctIndex
+  }));
+  const distractors = distractorTexts.map((text, index) => ({
+    id: `extra-${state.syllableIndex}-${index}`,
+    text,
+    correctIndex: -1
+  }));
+  state.syllableBank = shuffle([...correctItems, ...distractors]);
+  state.syllableBuilt = [];
+  state.locked = false;
+  $("#syllablePreview").hidden = true;
+  $("#syllableOrder").hidden = false;
+  $("#syllableInstruction").textContent = "Baue das Wort aus den richtigen Silben.";
+  renderSyllableOrder();
+}
+
+function makeSyllableChip(item, fromBank) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "syllable-chip";
+  appendVowelText(button, item.text);
+  button.addEventListener("click", () => moveSyllable(item.id, fromBank));
+  return button;
+}
+
+function renderSyllableOrder() {
+  const build = $("#syllableBuild");
+  const bank = $("#syllableBank");
+  build.replaceChildren();
+  bank.replaceChildren();
+  state.syllableBuilt.forEach((item) => build.append(makeSyllableChip(item, false)));
+  state.syllableBank.forEach((item) => bank.append(makeSyllableChip(item, true)));
+  const needed = state.current.slice(1).length;
+  $("#checkSyllable").disabled = state.locked || state.syllableBuilt.length !== needed;
+}
+
+function moveSyllable(id, fromBank) {
+  if (state.locked) return;
+  const source = fromBank ? state.syllableBank : state.syllableBuilt;
+  const destination = fromBank ? state.syllableBuilt : state.syllableBank;
+  const index = source.findIndex((item) => item.id === id);
+  if (index < 0) return;
+  if (fromBank && state.syllableBuilt.length >= state.current.slice(1).length) return;
+  destination.push(source.splice(index, 1)[0]);
+  $("#syllableFeedback").textContent = "";
+  renderSyllableOrder();
+}
+
+function checkSyllableWord() {
+  if (state.locked) return;
+  const correctSyllables = state.current.slice(1);
+  const isCorrect = state.syllableBuilt.every((item, index) => item.text === correctSyllables[index]);
+  if (isCorrect) {
+    state.locked = true;
+    state.syllableScore += 1;
+    if (state.syllableRoundAttempts === 0) state.syllableFirstTry += 1;
+    addCorrect();
+    beep(true);
+    $("#syllableScore").textContent = state.syllableScore;
+    $("#syllableFeedback").replaceChildren();
+    $("#syllableFeedback").append(document.createTextNode("Richtig: "));
+    const resultWord = document.createElement("strong");
+    appendVowelText(resultWord, state.current[0]);
+    $("#syllableFeedback").append(resultWord);
+    $("#syllableFeedback").className = "feedback-line good";
+    renderSyllableOrder();
+    state.syllableIndex += 1;
+    later(nextSyllableWord, 1400);
+    return;
+  }
+
+  state.locked = true;
+  state.syllableRoundAttempts += 1;
+  beep(false);
+  $("#syllableFeedback").textContent = "Noch nicht ganz. Lies die Silben erneut.";
+  $("#syllableFeedback").className = "feedback-line try";
+  renderSyllableOrder();
+  later(() => {
+    state.syllableBank = shuffle([...state.syllableBank, ...state.syllableBuilt]);
+    state.syllableBuilt = [];
+    state.locked = false;
+    renderSyllableOrder();
+  }, 1000);
+}
+
 function finishGame(game) {
   const total = game === "sentence" ? state.sentenceTotalWords : TOTALS[game];
-  const score = game === "sentence" ? state.sentenceWordScore : state.score;
-  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz" };
+  const score = game === "sentence" ? state.sentenceWordScore : game === "syllable" ? state.syllableScore : state.score;
+  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz", syllable: "Silben-Sprung" };
   const sentenceLevels = { easy: "kurz", medium: "mittel", hard: "lang" };
   $("#resultGame").textContent = game === "sentence" ? `${titles[game]} · ${sentenceLevels[state.sentenceLevel]}` : `${titles[game]} geschafft`;
   let resultTitle = score === total ? "Starke Runde!" : score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
   if (game === "chain") {
     resultTitle = state.chainFailures === 0 ? "Wow! Beim ersten Versuch!" : state.chainFailures <= 2 ? "Geschafft!" : "Du musst noch etwas üben.";
+  }
+  if (game === "syllable") {
+    resultTitle = state.syllableFirstTry === TOTALS.syllable ? "Wow! Alles beim ersten Versuch!" : state.syllableScore === TOTALS.syllable ? "Silben-Profi!" : "Gut gesprungen!";
   }
   $("#resultTitle").textContent = resultTitle;
   $("#resultScore").textContent = score;
@@ -701,6 +951,7 @@ function replay() {
   if (state.game === "chain") startChain();
   if (state.game === "real") startReal();
   if (state.game === "sentence") startSentence();
+  if (state.game === "syllable") startSyllable();
 }
 
 const ADMIN_STORAGE_KEY = "wortblitz-admin-config-v1";
@@ -1079,10 +1330,12 @@ $("#resetProfileButton").addEventListener("click", resetPlayerProfile);
 $("#adminButton").addEventListener("click", openAdmin);
 $("#startFlash").addEventListener("click", startFlash);
 $("#startSentence").addEventListener("click", startSentence);
+$("#startSyllable").addEventListener("click", startSyllable);
 $("#playAgain").addEventListener("click", replay);
 $("#answerReal").addEventListener("click", () => answerReal(true));
 $("#answerMade").addEventListener("click", () => answerReal(false));
 $("#checkSentence").addEventListener("click", checkSentenceOrder);
+$("#checkSyllable").addEventListener("click", checkSyllableWord);
 $("#saveAdminSetup").addEventListener("click", saveAdminSetup);
 $("#adminLogin").addEventListener("click", loginAdmin);
 $("#adminPinLogin").addEventListener("keydown", (event) => { if (event.key === "Enter") loginAdmin(); });
@@ -1107,6 +1360,14 @@ $$('[data-sentence-level]').forEach((button) => {
     $$('[data-sentence-level]').forEach((item) => item.classList.remove("selected"));
     button.classList.add("selected");
     state.sentenceLevel = button.dataset.sentenceLevel;
+  });
+});
+
+$$('[data-syllable-level]').forEach((button) => {
+  button.addEventListener("click", () => {
+    $$('[data-syllable-level]').forEach((item) => item.classList.remove("selected"));
+    button.classList.add("selected");
+    state.syllableLevel = button.dataset.syllableLevel;
   });
 });
 
