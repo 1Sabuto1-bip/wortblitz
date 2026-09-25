@@ -798,10 +798,16 @@ function renderSwingWord() {
 function resizeSwingCanvas() {
   const canvas = $("#swingCanvas");
   const drawing = $("#swingDrawing");
-  const wordWidth = Math.ceil($("#swingWord").scrollWidth);
-  const availableWidth = Math.max(260, drawing.parentElement.clientWidth - 24);
-  const width = Math.min(availableWidth, Math.max(260, wordWidth));
-  const height = 120;
+  const word = $("#swingWord");
+  const drawingStyle = getComputedStyle(drawing);
+  const horizontalPadding = parseFloat(drawingStyle.paddingLeft) + parseFloat(drawingStyle.paddingRight);
+  const availableWidth = Math.max(260, Math.min(960, drawing.clientWidth - horizontalPadding));
+  word.style.fontSize = "100px";
+  const naturalWidth = Math.max(1, word.scrollWidth);
+  const fittedSize = Math.max(48, Math.min(220, (availableWidth * .94 / naturalWidth) * 100));
+  word.style.fontSize = `${fittedSize}px`;
+  const width = availableWidth;
+  const height = 140;
   const ratio = Math.max(1, window.devicePixelRatio || 1);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
@@ -848,18 +854,20 @@ function beginSwing(event) {
 function continueSwing(event) {
   if (!state.activeStroke || state.locked) return;
   event.preventDefault();
-  state.activeStroke.push(swingPoint(event));
+  const events = typeof event.getCoalescedEvents === "function" ? event.getCoalescedEvents() : [event];
+  events.forEach((item) => state.activeStroke.push(swingPoint(item)));
   drawSwingStrokes();
 }
 
 function endSwing(event) {
   if (!state.activeStroke || state.locked) return;
   event.preventDefault();
-  state.activeStroke.push(swingPoint(event));
+  const events = typeof event.getCoalescedEvents === "function" ? event.getCoalescedEvents() : [event];
+  events.forEach((item) => state.activeStroke.push(swingPoint(item)));
   if (state.activeStroke.length >= 3) state.swingStrokes.push(state.activeStroke);
   state.activeStroke = null;
   drawSwingStrokes();
-  if (state.swingStrokes.length >= state.current.slice(1).length) checkSwingStrokes();
+  if (state.swingStrokes.length) checkSwingStrokes();
 }
 
 function expectedSwingAreas() {
@@ -875,32 +883,41 @@ function expectedSwingAreas() {
   });
 }
 
-function strokeLooksLikeArc(stroke, area) {
-  const xs = stroke.map((point) => point.x);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const center = (minX + maxX) / 2;
-  const width = maxX - minX;
+function nearestPointAtX(stroke, targetX) {
+  return stroke.reduce((nearest, point) => Math.abs(point.x - targetX) < Math.abs(nearest.x - targetX) ? point : nearest, stroke[0]);
+}
+
+function connectedStrokeMatchesSyllables(stroke, areas) {
+  if (!stroke || stroke.length < 5 || !areas.length) return false;
   const forwardStroke = stroke[0].x <= stroke[stroke.length - 1].x ? stroke : [...stroke].reverse();
-  const edgeY = (forwardStroke[0].y + forwardStroke[forwardStroke.length - 1].y) / 2;
-  const middle = forwardStroke.filter((point) => point.x > minX + width * .3 && point.x < maxX - width * .3);
-  const middleY = middle.length ? middle.reduce((sum, point) => sum + point.y, 0) / middle.length : edgeY;
-  const centerTolerance = Math.max(26, area.width * .42);
-  return Math.abs(center - area.center) <= centerTolerance
-    && width >= area.width * .42
-    && width <= area.width * 1.7
-    && middleY >= edgeY + 3;
+  const firstArea = areas[0];
+  const lastArea = areas[areas.length - 1];
+  const totalWidth = lastArea.right - firstArea.left;
+  const outerTolerance = Math.max(22, totalWidth * .055);
+  const startsAtWord = Math.abs(forwardStroke[0].x - firstArea.left) <= outerTolerance;
+  const endsAtWord = Math.abs(forwardStroke[forwardStroke.length - 1].x - lastArea.right) <= outerTolerance;
+  const travelsAcrossWord = forwardStroke[forwardStroke.length - 1].x - forwardStroke[0].x >= totalWidth * .82;
+  if (!startsAtWord || !endsAtWord || !travelsAcrossWord) return false;
+
+  return areas.every((area) => {
+    const boundaryTolerance = Math.max(14, Math.min(28, area.width * .2));
+    const leftPoint = nearestPointAtX(forwardStroke, area.left);
+    const rightPoint = nearestPointAtX(forwardStroke, area.right);
+    if (Math.abs(leftPoint.x - area.left) > boundaryTolerance || Math.abs(rightPoint.x - area.right) > boundaryTolerance) return false;
+
+    const middlePoints = forwardStroke.filter((point) => point.x >= area.left + area.width * .28 && point.x <= area.right - area.width * .28);
+    if (!middlePoints.length) return false;
+    const deepestMiddle = Math.max(...middlePoints.map((point) => point.y));
+    const boundaryY = (leftPoint.y + rightPoint.y) / 2;
+    const neededDepth = Math.max(5, Math.min(13, area.width * .08));
+    return deepestMiddle >= boundaryY + neededDepth;
+  });
 }
 
 function checkSwingStrokes() {
   state.locked = true;
   const areas = expectedSwingAreas();
-  const strokes = [...state.swingStrokes].sort((a, b) => {
-    const centerA = (Math.min(...a.map((point) => point.x)) + Math.max(...a.map((point) => point.x))) / 2;
-    const centerB = (Math.min(...b.map((point) => point.x)) + Math.max(...b.map((point) => point.x))) / 2;
-    return centerA - centerB;
-  });
-  const isCorrect = strokes.length === areas.length && strokes.every((stroke, index) => strokeLooksLikeArc(stroke, areas[index]));
+  const isCorrect = state.swingStrokes.length === 1 && connectedStrokeMatchesSyllables(state.swingStrokes[0], areas);
 
   if (isCorrect) {
     if (state.swingRoundAttempts === 0) state.swingFirstTry += 1;
@@ -921,7 +938,7 @@ function checkSwingStrokes() {
   beep(false);
   drawSwingStrokes("#b45038");
   $("#swingDrawing").classList.add("is-wrong");
-  $("#swingFeedback").textContent = "Noch nicht ganz. Zeichne für jede Silbe einen Bogen.";
+  $("#swingFeedback").textContent = "Noch nicht ganz. Zeichne alle Bögen verbunden von Wortanfang bis Wortende.";
   $("#swingFeedback").className = "feedback-line try";
   later(() => {
     clearSwingStrokes();
@@ -948,7 +965,7 @@ function nextSwingWord() {
   updateSwingHeader();
   renderSwingWord();
   const syllableCount = state.current.length - 1;
-  $("#swingInstruction").textContent = `Zeichne ${syllableCount} ${syllableCount === 1 ? "Silbenbogen" : "Silbenbögen"}.`;
+  $("#swingInstruction").textContent = `Zeichne ${syllableCount} verbundene ${syllableCount === 1 ? "Silbenschwinge" : "Silbenschwingen"} in einem Zug.`;
   $("#swingFeedback").textContent = "";
   $("#swingFeedback").className = "feedback-line";
   $("#swingDrawing").classList.remove("is-correct", "is-wrong");

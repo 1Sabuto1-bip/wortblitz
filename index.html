@@ -151,7 +151,7 @@
           <div class="round-icon round-icon--swing" aria-hidden="true">∪</div>
           <p class="eyebrow">Silbenschwingen</p>
           <h1>Wie lang sollen die Wörter sein?</h1>
-          <p class="setup-hint">Lies das Wort und zeichne mit dem Finger unter jede Silbe einen Bogen. Die Vokale sind blau markiert.</p>
+          <p class="setup-hint">Lies das Wort und zeichne alle Silbenbögen verbunden in einem Zug. Jeder Bogen reicht vom Anfang bis hinter den letzten Buchstaben seiner Silbe. Die Vokale sind blau markiert.</p>
           <div class="level-list" role="radiogroup" aria-label="Wortlänge beim Silbenschwingen">
             <button class="level-button" type="button" data-swing-level="easy"><span class="level-icon" aria-hidden="true">🐣</span><span class="level-copy"><strong>Kurz</strong><span>Meistens zwei Silben</span></span></button>
             <button class="level-button selected" type="button" data-swing-level="medium"><span class="level-icon" aria-hidden="true">🐿️</span><span class="level-copy"><strong>Mittel</strong><span>Mittellange Wörter</span></span></button>
@@ -253,10 +253,10 @@
           <div class="mini-score swing-failures"><span>Fehler</span><strong id="swingFailures">0</strong></div>
         </div>
         <div class="swing-stage">
-          <p class="instruction" id="swingInstruction">Zeichne unter jede Silbe einen Bogen.</p>
+          <p class="instruction" id="swingInstruction">Zeichne alle Silbenbögen verbunden in einem Zug.</p>
           <div class="swing-drawing" id="swingDrawing">
             <div class="swing-word" id="swingWord" aria-live="polite"></div>
-            <canvas id="swingCanvas" height="120" aria-label="Zeichenfläche für Silbenbögen"></canvas>
+            <canvas id="swingCanvas" height="140" aria-label="Zeichenfläche für eine verbundene Silbenschwinge"></canvas>
           </div>
           <button class="secondary-button swing-clear" id="clearSwings" type="button">Bögen löschen</button>
           <div class="feedback-line" id="swingFeedback" aria-live="polite"></div>
