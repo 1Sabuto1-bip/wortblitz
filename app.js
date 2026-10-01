@@ -872,13 +872,18 @@ function endSwing(event) {
 
 function expectedSwingAreas() {
   const canvasBounds = $("#swingCanvas").getBoundingClientRect();
-  return $$("#swingWord .swing-syllable").map((part) => {
+  const parts = $$("#swingWord .swing-syllable");
+  return parts.map((part, index) => {
     const bounds = part.getBoundingClientRect();
+    const finalLetter = part.lastElementChild?.getBoundingClientRect();
+    const nextLetter = parts[index + 1]?.firstElementChild?.getBoundingClientRect();
     return {
       left: bounds.left - canvasBounds.left,
       right: bounds.right - canvasBounds.left,
       center: (bounds.left + bounds.right) / 2 - canvasBounds.left,
-      width: bounds.width
+      width: bounds.width,
+      // A syllable boundary may land on a letter, but not an entire letter away.
+      boundaryLetterWidth: finalLetter && nextLetter ? Math.min(finalLetter.width, nextLetter.width) : 0
     };
   });
 }
@@ -887,9 +892,26 @@ function nearestPointAtX(stroke, targetX) {
   return stroke.reduce((nearest, point) => Math.abs(point.x - targetX) < Math.abs(nearest.x - targetX) ? point : nearest, stroke[0]);
 }
 
+function sampledSwingLine(stroke) {
+  const samples = [stroke[0]];
+  for (let index = 1; index < stroke.length; index += 1) {
+    const previous = stroke[index - 1];
+    const next = stroke[index];
+    const steps = Math.max(1, Math.ceil(Math.abs(next.x - previous.x) / 3));
+    for (let step = 1; step <= steps; step += 1) {
+      const fraction = step / steps;
+      samples.push({
+        x: previous.x + (next.x - previous.x) * fraction,
+        y: previous.y + (next.y - previous.y) * fraction
+      });
+    }
+  }
+  return samples;
+}
+
 function connectedStrokeMatchesSyllables(stroke, areas) {
   if (!stroke || stroke.length < 4 || !areas.length) return false;
-  const forwardStroke = stroke[0].x <= stroke[stroke.length - 1].x ? stroke : [...stroke].reverse();
+  const forwardStroke = sampledSwingLine(stroke[0].x <= stroke[stroke.length - 1].x ? stroke : [...stroke].reverse());
   const firstArea = areas[0];
   const lastArea = areas[areas.length - 1];
   const totalWidth = lastArea.right - firstArea.left;
@@ -899,18 +921,32 @@ function connectedStrokeMatchesSyllables(stroke, areas) {
   const travelsAcrossWord = forwardStroke[forwardStroke.length - 1].x - forwardStroke[0].x >= totalWidth * .68;
   if (!startsAtWord || !endsAtWord || !travelsAcrossWord) return false;
 
-  return areas.every((area) => {
-    const boundaryTolerance = Math.max(28, Math.min(52, area.width * .38));
-    const leftPoint = nearestPointAtX(forwardStroke, area.left);
-    const rightPoint = nearestPointAtX(forwardStroke, area.right);
-    if (Math.abs(leftPoint.x - area.left) > boundaryTolerance || Math.abs(rightPoint.x - area.right) > boundaryTolerance) return false;
+  // The connected high points must be actual turning points close to the
+  // syllable boundaries. Checking only the curve's height at a boundary also
+  // accepts Sch-ule instead of Schu-le.
+  const highPoints = [forwardStroke[0]];
+  for (let index = 0; index < areas.length - 1; index += 1) {
+    const area = areas[index];
+    const nextArea = areas[index + 1];
+    const letterWidth = area.boundaryLetterWidth || Math.min(area.width / 3, nextArea.width / 2);
+    const tolerance = Math.max(7, Math.min(24, letterWidth * .42));
+    const nearby = forwardStroke.filter((point) => Math.abs(point.x - area.right) <= tolerance);
+    if (!nearby.length) return false;
+    const highPoint = nearby.reduce((highest, point) => point.y < highest.y ? point : highest);
+    const probeDistance = Math.max(12, letterWidth * .65);
+    const before = nearestPointAtX(forwardStroke, highPoint.x - probeDistance);
+    const after = nearestPointAtX(forwardStroke, highPoint.x + probeDistance);
+    if (highPoint.y > before.y + 3 || highPoint.y > after.y + 3) return false;
+    highPoints.push(highPoint);
+  }
+  highPoints.push(forwardStroke[forwardStroke.length - 1]);
 
+  return areas.every((area, index) => {
     const middlePoints = forwardStroke.filter((point) => point.x >= area.left + area.width * .22 && point.x <= area.right - area.width * .22);
     if (!middlePoints.length) return false;
     const deepestMiddle = Math.max(...middlePoints.map((point) => point.y));
-    const boundaryY = (leftPoint.y + rightPoint.y) / 2;
-    const neededDepth = Math.max(3, Math.min(9, area.width * .055));
-    return deepestMiddle >= boundaryY + neededDepth;
+    const neededDepth = Math.max(6, Math.min(13, area.width * .07));
+    return deepestMiddle >= Math.max(highPoints[index].y, highPoints[index + 1].y) + neededDepth;
   });
 }
 
