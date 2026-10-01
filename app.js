@@ -888,28 +888,28 @@ function nearestPointAtX(stroke, targetX) {
 }
 
 function connectedStrokeMatchesSyllables(stroke, areas) {
-  if (!stroke || stroke.length < 5 || !areas.length) return false;
+  if (!stroke || stroke.length < 4 || !areas.length) return false;
   const forwardStroke = stroke[0].x <= stroke[stroke.length - 1].x ? stroke : [...stroke].reverse();
   const firstArea = areas[0];
   const lastArea = areas[areas.length - 1];
   const totalWidth = lastArea.right - firstArea.left;
-  const outerTolerance = Math.max(22, totalWidth * .055);
+  const outerTolerance = Math.max(42, totalWidth * .13);
   const startsAtWord = Math.abs(forwardStroke[0].x - firstArea.left) <= outerTolerance;
   const endsAtWord = Math.abs(forwardStroke[forwardStroke.length - 1].x - lastArea.right) <= outerTolerance;
-  const travelsAcrossWord = forwardStroke[forwardStroke.length - 1].x - forwardStroke[0].x >= totalWidth * .82;
+  const travelsAcrossWord = forwardStroke[forwardStroke.length - 1].x - forwardStroke[0].x >= totalWidth * .68;
   if (!startsAtWord || !endsAtWord || !travelsAcrossWord) return false;
 
   return areas.every((area) => {
-    const boundaryTolerance = Math.max(14, Math.min(28, area.width * .2));
+    const boundaryTolerance = Math.max(28, Math.min(52, area.width * .38));
     const leftPoint = nearestPointAtX(forwardStroke, area.left);
     const rightPoint = nearestPointAtX(forwardStroke, area.right);
     if (Math.abs(leftPoint.x - area.left) > boundaryTolerance || Math.abs(rightPoint.x - area.right) > boundaryTolerance) return false;
 
-    const middlePoints = forwardStroke.filter((point) => point.x >= area.left + area.width * .28 && point.x <= area.right - area.width * .28);
+    const middlePoints = forwardStroke.filter((point) => point.x >= area.left + area.width * .22 && point.x <= area.right - area.width * .22);
     if (!middlePoints.length) return false;
     const deepestMiddle = Math.max(...middlePoints.map((point) => point.y));
     const boundaryY = (leftPoint.y + rightPoint.y) / 2;
-    const neededDepth = Math.max(5, Math.min(13, area.width * .08));
+    const neededDepth = Math.max(3, Math.min(9, area.width * .055));
     return deepestMiddle >= boundaryY + neededDepth;
   });
 }
