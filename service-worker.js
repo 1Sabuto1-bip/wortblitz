@@ -1,5 +1,6 @@
-const CACHE_NAME = "wortblitz-v11";
-const APP_FILES = ["./", "./index.html", "./styles.css", "./app.js", "./words.json", "./manifest.webmanifest", "./icons/icon.svg"];
+const CACHE_NAME = "wortblitz-v16";
+const ANLAUT_IMAGES = ["a", "e", "i", "o", "u", "au", "eu", "ei", "oe", "ue", "sch", "g", "b", "d", "w", "s", "l", "m", "ch", "r", "k", "p", "t", "f", "z", "h", "n", "y", "x", "v", "c", "qu", "sp", "st"].map((symbol) => `./anlaute/${symbol}.png`);
+const APP_FILES = ["./", "./index.html", "./styles.css", "./app.js", "./words.json", "./manifest.webmanifest", "./icons/icon.svg", ...ANLAUT_IMAGES];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES)));

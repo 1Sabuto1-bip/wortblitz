@@ -143,7 +143,56 @@ const SYLLABLE_WORDS_BY_GRADE = {
   }
 };
 
-const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5, swing: 10 };
+// The PNGs are unaltered crops of the provided anlaut chart. The keys are
+// written sound units: au, ei, eu, sch, sp and st each occupy one reel.
+const ANLAUT_SYMBOLS = {
+  a: "Ameise", e: "Esel", i: "Igel", o: "Ofen", u: "Uhr",
+  au: "Auto", eu: "Eule", ei: "Eis", oe: "Öl", ue: "Überholverbot",
+  sch: "Schere", g: "Gabel", b: "Baum", d: "Dinosaurier",
+  w: "Wal", s: "Sonne", l: "Löwe", m: "Maus", ch: "Buch",
+  r: "Roller", k: "Kerze", p: "Pinguin", t: "Tiger", f: "Fisch",
+  z: "Zebra", h: "Hut", n: "Nashorn", y: "Yak", x: "Xylophon",
+  v: "Vogel", c: "Computer", qu: "Qualle", sp: "Spinne", st: "Stern"
+};
+
+const SECRET_WORDS = {
+  3: [
+    ["Haus", "h", "au", "s"], ["Maus", "m", "au", "s"],
+    ["Baum", "b", "au", "m"], ["Hut", "h", "u", "t"], ["Mut", "m", "u", "t"],
+    ["Bus", "b", "u", "s"], ["Rot", "r", "o", "t"], ["Tor", "t", "o", "r"],
+    ["Reis", "r", "ei", "s"], ["Fisch", "f", "i", "sch"], ["Tisch", "t", "i", "sch"],
+    ["Schaf", "sch", "a", "f"], ["Oma", "o", "m", "a"], ["Opa", "o", "p", "a"],
+    ["Arm", "a", "r", "m"], ["Ast", "a", "s", "t"], ["Tal", "t", "a", "l"],
+    ["Wal", "w", "a", "l"], ["Hof", "h", "o", "f"], ["Wut", "w", "u", "t"]
+  ],
+  4: [
+    ["Hase", "h", "a", "s", "e"], ["Nase", "n", "a", "s", "e"],
+    ["Hose", "h", "o", "s", "e"], ["Rose", "r", "o", "s", "e"],
+    ["Mama", "m", "a", "m", "a"], ["Papa", "p", "a", "p", "a"],
+    ["Lama", "l", "a", "m", "a"], ["Sofa", "s", "o", "f", "a"],
+    ["Kino", "k", "i", "n", "o"], ["Dino", "d", "i", "n", "o"],
+    ["Mond", "m", "o", "n", "d"], ["Kind", "k", "i", "n", "d"],
+    ["Wind", "w", "i", "n", "d"], ["Hand", "h", "a", "n", "d"],
+    ["Schule", "sch", "u", "l", "e"], ["Seife", "s", "ei", "f", "e"],
+    ["Ente", "e", "n", "t", "e"], ["Rabe", "r", "a", "b", "e"],
+    ["Raupe", "r", "au", "p", "e"], ["Frosch", "f", "r", "o", "sch"]
+  ],
+  5: [
+    ["Blume", "b", "l", "u", "m", "e"], ["Lampe", "l", "a", "m", "p", "e"],
+    ["Maske", "m", "a", "s", "k", "e"],
+    ["Nudel", "n", "u", "d", "e", "l"], ["Rinde", "r", "i", "n", "d", "e"],
+    ["Birne", "b", "i", "r", "n", "e"], ["Tinte", "t", "i", "n", "t", "e"],
+    ["Farbe", "f", "a", "r", "b", "e"], ["Karte", "k", "a", "r", "t", "e"],
+    ["Kiste", "k", "i", "s", "t", "e"], ["Wolke", "w", "o", "l", "k", "e"],
+    ["Tafel", "t", "a", "f", "e", "l"], ["Harke", "h", "a", "r", "k", "e"],
+    ["Salat", "s", "a", "l", "a", "t"], ["Kamel", "k", "a", "m", "e", "l"],
+    ["Faden", "f", "a", "d", "e", "n"], ["Regen", "r", "e", "g", "e", "n"],
+    ["Wagen", "w", "a", "g", "e", "n"], ["Nagel", "n", "a", "g", "e", "l"],
+    ["Hafen", "h", "a", "f", "e", "n"]
+  ]
+};
+
+const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5, swing: 10, secret: 10 };
 const screens = [...document.querySelectorAll("[data-screen]")];
 const state = {
   sound: localStorage.getItem("wortblitz-sound") !== "off",
@@ -178,6 +227,15 @@ const state = {
   swingFailures: 0,
   swingStrokes: [],
   activeStroke: null,
+  secretLength: 3,
+  secretWords: [],
+  secretIndex: 0,
+  secretScore: 0,
+  secretReady: false,
+  boardLength: 3,
+  boardWord: null,
+  boardDeck: [],
+  boardReady: false,
   adminSession: null,
   locked: false
 };
@@ -293,6 +351,7 @@ function resetPlayerProfile() {
 
 function showScreen(name) {
   clearPendingTimers();
+  document.body.classList.toggle("board-mode", name.startsWith("board-"));
   screens.forEach((screen) => { screen.hidden = screen.dataset.screen !== name; });
   $("#app").focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -395,6 +454,7 @@ function openGame(game) {
   if (game === "real") startReal();
   if (game === "sentence") showScreen("sentence-setup");
   if (game === "swing") showScreen("swing-setup");
+  if (game === "secret") showScreen("secret-setup");
 }
 
 function startFlash() {
@@ -1008,10 +1068,200 @@ function nextSwingWord() {
   requestAnimationFrame(resizeSwingCanvas);
 }
 
+function anlautImage(key) {
+  return `anlaute/${key}.png`;
+}
+
+function createAnlautPicture(key = "a") {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
+  svg.append(image);
+  setAnlautPicture(svg, key);
+  return svg;
+}
+
+function setAnlautPicture(svg, key, spinning = false) {
+  svg.setAttribute("viewBox", "0 0 320 320");
+  svg.setAttribute("aria-label", spinning ? "Bild dreht sich" : ANLAUT_SYMBOLS[key]);
+  const image = svg.firstElementChild;
+  image.setAttribute("width", "320");
+  image.setAttribute("height", "320");
+  image.setAttribute("href", anlautImage(key));
+}
+
+function renderAnlautTable() {
+  const table = $("#anlautTable");
+  if (table.childElementCount) return;
+  Object.entries(ANLAUT_SYMBOLS).forEach(([key, name]) => {
+    const item = document.createElement("div");
+    item.className = "anlaut-item";
+    const image = createAnlautPicture(key);
+    const letters = document.createElement("strong");
+    const printed = { oe: "Ö", ue: "Ü" }[key] || key.toUpperCase();
+    letters.textContent = printed;
+    item.append(image, letters);
+    table.append(item);
+  });
+}
+
+function startSecret() {
+  Object.assign(state, {
+    game: "secret",
+    secretWords: sample(SECRET_WORDS[state.secretLength], TOTALS.secret),
+    secretIndex: 0,
+    secretScore: 0,
+    secretReady: false,
+    locked: false
+  });
+  showScreen("secret-play");
+  nextSecretWord();
+}
+
+function nextSecretWord() {
+  if (state.secretIndex >= TOTALS.secret) return finishGame("secret");
+  state.current = state.secretWords[state.secretIndex];
+  state.secretReady = false;
+  state.locked = false;
+  $("#secretRoundLabel").textContent = `Wort ${state.secretIndex + 1} von ${TOTALS.secret}`;
+  $("#secretProgress").style.width = `${state.secretIndex / TOTALS.secret * 100}%`;
+  $("#secretScore").textContent = state.secretScore;
+  $("#secretInstruction").textContent = "Die Bilder drehen sich …";
+  $("#revealSecret").hidden = false;
+  $("#revealSecret").disabled = true;
+  $("#secretSolution").hidden = true;
+  $("#secretSolution").textContent = "";
+  $("#secretEvaluation").hidden = true;
+  const reels = $("#secretReels");
+  reels.replaceChildren();
+  const tokenKeys = Object.keys(ANLAUT_SYMBOLS);
+  let stopped = 0;
+
+  state.current.slice(1).forEach((token, reelIndex) => {
+    const reel = document.createElement("div");
+    reel.className = "secret-reel is-spinning";
+    const picture = createAnlautPicture(token);
+    reel.append(picture);
+    reels.append(reel);
+
+    const turns = 9 + reelIndex * 5;
+    const turn = (step) => {
+      if (!reel.isConnected || $("[data-screen='secret-play']").hidden) return;
+      if (step < turns) {
+        setAnlautPicture(picture, tokenKeys[Math.floor(Math.random() * tokenKeys.length)], true);
+        later(() => turn(step + 1), 90);
+        return;
+      }
+      setAnlautPicture(picture, token);
+      reel.classList.remove("is-spinning");
+      reel.classList.add("is-stopped");
+      stopped += 1;
+      if (stopped === state.current.length - 1) {
+        state.secretReady = true;
+        $("#secretInstruction").textContent = "Lies das Geheimwort laut. Tippe danach auf „Lösung zeigen“.";
+        $("#revealSecret").disabled = false;
+      }
+    };
+    turn(0);
+  });
+}
+
+function revealSecretWord() {
+  if (!state.secretReady || state.locked) return;
+  $("#revealSecret").hidden = true;
+  $("#secretSolution").textContent = state.current[0];
+  $("#secretSolution").hidden = false;
+  $("#secretEvaluation").hidden = false;
+  $("#secretInstruction").textContent = "Hast du das Wort richtig gelesen?";
+}
+
+function finishSecretWord(correct) {
+  if (state.locked || !state.secretReady || $("#secretEvaluation").hidden) return;
+  state.locked = true;
+  if (correct) {
+    state.secretScore += 1;
+    addCorrect();
+    beep(true);
+    $("#secretScore").textContent = state.secretScore;
+  }
+  $("#secretInstruction").textContent = correct ? "Gut gelesen!" : "Gut geübt!";
+  state.secretIndex += 1;
+  later(nextSecretWord, 750);
+}
+
+function showBoardHome() {
+  showScreen("board-home");
+}
+
+function startBoardSecret() {
+  state.boardWord = null;
+  state.boardDeck = [];
+  showScreen("board-secret-play");
+  nextBoardWord();
+}
+
+function nextBoardWord() {
+  if (!state.boardDeck.length) {
+    state.boardDeck = shuffle(SECRET_WORDS[state.boardLength]);
+    if (state.boardWord && state.boardDeck[0] === state.boardWord) {
+      [state.boardDeck[0], state.boardDeck[1]] = [state.boardDeck[1], state.boardDeck[0]];
+    }
+  }
+  state.boardWord = state.boardDeck.shift();
+  state.boardReady = false;
+  $("#boardInstruction").textContent = "Die Bilder drehen sich …";
+  $("#boardSolution").hidden = true;
+  $("#boardSolution").textContent = "";
+  $("#boardReveal").hidden = false;
+  $("#boardReveal").disabled = true;
+  $("#boardNext").hidden = true;
+  const reels = $("#boardReels");
+  reels.replaceChildren();
+  const tokenKeys = Object.keys(ANLAUT_SYMBOLS);
+  let stopped = 0;
+
+  state.boardWord.slice(1).forEach((token, reelIndex) => {
+    const reel = document.createElement("div");
+    reel.className = "secret-reel board-reel is-spinning";
+    const picture = createAnlautPicture(token);
+    reel.append(picture);
+    reels.append(reel);
+
+    const turns = 10 + reelIndex * 5;
+    const turn = (step) => {
+      if (!reel.isConnected || $("[data-screen='board-secret-play']").hidden) return;
+      if (step < turns) {
+        setAnlautPicture(picture, tokenKeys[Math.floor(Math.random() * tokenKeys.length)], true);
+        later(() => turn(step + 1), 90);
+        return;
+      }
+      setAnlautPicture(picture, token);
+      reel.classList.remove("is-spinning");
+      reel.classList.add("is-stopped");
+      if (++stopped === state.boardWord.length - 1) {
+        state.boardReady = true;
+        $("#boardInstruction").textContent = "Lest das Geheimwort gemeinsam!";
+        $("#boardReveal").disabled = false;
+        $("#boardNext").hidden = false;
+      }
+    };
+    turn(0);
+  });
+}
+
+function revealBoardWord() {
+  if (!state.boardReady) return;
+  $("#boardSolution").textContent = state.boardWord[0];
+  $("#boardSolution").hidden = false;
+  $("#boardReveal").hidden = true;
+  $("#boardInstruction").textContent = "Das Geheimwort lautet:";
+}
+
 function finishGame(game) {
   const total = game === "sentence" ? state.sentenceTotalWords : TOTALS[game];
-  const score = game === "sentence" ? state.sentenceWordScore : game === "swing" ? TOTALS.swing : state.score;
-  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz", swing: "Silbenschwingen" };
+  const score = game === "sentence" ? state.sentenceWordScore : game === "swing" ? TOTALS.swing : game === "secret" ? state.secretScore : state.score;
+  const titles = { flash: "Blitzwort", chain: "Lesekette", real: "Richtig oder erfunden?", sentence: "Satzblitz", swing: "Silbenschwingen", secret: "Anlaut-Geheimwort" };
   const sentenceLevels = { easy: "kurz", medium: "mittel", hard: "lang" };
   $("#resultGame").textContent = game === "sentence" ? `${titles[game]} · ${sentenceLevels[state.sentenceLevel]}` : `${titles[game]} geschafft`;
   let resultTitle = score === total ? "Starke Runde!" : score >= total * .7 ? "Prima gelesen!" : "Gut geübt!";
@@ -1021,9 +1271,10 @@ function finishGame(game) {
   if (game === "swing") {
     resultTitle = state.swingFirstTry === TOTALS.swing ? "Wow! Alles beim ersten Versuch!" : state.swingFailures <= 3 ? "Silben-Profi!" : "Gut geschwungen!";
   }
+  if (game === "secret") resultTitle = score === total ? "Geheimwort-Profi!" : "Gut gelesen!";
   $("#resultTitle").textContent = resultTitle;
   $("#resultScore").textContent = score;
-  $("#resultTotal").textContent = `von ${total} richtig`;
+  $("#resultTotal").textContent = game === "secret" ? `von ${total} selbst richtig gelesen` : `von ${total} richtig`;
   $("#speedSummary").hidden = game !== "flash";
   $("#sentenceSummary").hidden = game !== "sentence";
   $("#chainSummary").hidden = game !== "chain";
@@ -1052,6 +1303,7 @@ function replay() {
   if (state.game === "real") startReal();
   if (state.game === "sentence") startSentence();
   if (state.game === "swing") startSwing();
+  if (state.game === "secret") startSecret();
 }
 
 const ADMIN_STORAGE_KEY = "wortblitz-admin-config-v1";
@@ -1426,11 +1678,30 @@ $$('[data-open-game]').forEach((button) => button.addEventListener("click", () =
 $$('[data-back-home]').forEach((button) => button.addEventListener("click", goHome));
 $("#homeButton").addEventListener("click", goHome);
 $("#profileForm").addEventListener("submit", startPlayerProfile);
+$("#openBoardFromProfile").addEventListener("click", showBoardHome);
+$("#openBoardFromHome").addEventListener("click", showBoardHome);
+$$("[data-board-home]").forEach((button) => button.addEventListener("click", showBoardHome));
+$("#openBoardSecret").addEventListener("click", () => showScreen("board-secret-setup"));
+$("#startBoardSecret").addEventListener("click", startBoardSecret);
+$("#changeBoardLength").addEventListener("click", () => showScreen("board-secret-setup"));
+$("#boardReveal").addEventListener("click", revealBoardWord);
+$("#boardNext").addEventListener("click", nextBoardWord);
 $("#resetProfileButton").addEventListener("click", resetPlayerProfile);
 $("#adminButton").addEventListener("click", openAdmin);
 $("#startFlash").addEventListener("click", startFlash);
 $("#startSentence").addEventListener("click", startSentence);
 $("#startSwing").addEventListener("click", startSwing);
+$("#startSecret").addEventListener("click", startSecret);
+$("#revealSecret").addEventListener("click", revealSecretWord);
+$("#secretCorrect").addEventListener("click", () => finishSecretWord(true));
+$("#secretPractice").addEventListener("click", () => finishSecretWord(false));
+$("#toggleAnlautTable").addEventListener("click", () => {
+  const table = $("#anlautTable");
+  table.hidden = !table.hidden;
+  $("#toggleAnlautTable").setAttribute("aria-expanded", String(!table.hidden));
+  $("#toggleAnlautTable").textContent = table.hidden ? "Anlauttabelle ansehen" : "Anlauttabelle schließen";
+  if (!table.hidden) renderAnlautTable();
+});
 $("#playAgain").addEventListener("click", replay);
 $("#answerReal").addEventListener("click", () => answerReal(true));
 $("#answerMade").addEventListener("click", () => answerReal(false));
@@ -1472,6 +1743,22 @@ $$('[data-swing-level]').forEach((button) => {
     $$('[data-swing-level]').forEach((item) => item.classList.remove("selected"));
     button.classList.add("selected");
     state.swingLevel = button.dataset.swingLevel;
+  });
+});
+
+$$('[data-secret-length]').forEach((button) => {
+  button.addEventListener("click", () => {
+    $$('[data-secret-length]').forEach((item) => item.classList.remove("selected"));
+    button.classList.add("selected");
+    state.secretLength = Number(button.dataset.secretLength);
+  });
+});
+
+$$('[data-board-length]').forEach((button) => {
+  button.addEventListener("click", () => {
+    $$('[data-board-length]').forEach((item) => item.classList.remove("selected"));
+    button.classList.add("selected");
+    state.boardLength = Number(button.dataset.boardLength);
   });
 });
 

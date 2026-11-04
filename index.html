@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#173f5f">
-  <meta name="description" content="Fünf kurze Lesespiele für Sichtwortschatz und Silbenlesen in den Klassen 2 bis 4.">
+  <meta name="description" content="Sechs Lesespiele für Sichtwortschatz, Silben und Anlaute in den Klassen 2 bis 4.">
   <title>Wortblitz</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23173f5f'/%3E%3Cpath d='M36 5 15 36h15l-3 23 22-34H34z' fill='%23ffd166'/%3E%3C/svg%3E">
@@ -46,6 +46,7 @@
             </select>
             <button class="primary-button" type="submit">Los geht’s</button>
           </form>
+          <button class="secondary-button board-entry" id="openBoardFromProfile" type="button">▣ Tafelversion</button>
           <p class="privacy-note">Dein Name bleibt nur auf diesem Tablet.</p>
         </div>
       </section>
@@ -55,6 +56,7 @@
           <div>
             <p class="eyebrow">Lesetraining · Klasse <span id="playerGradeLabel">3</span></p>
             <h1 id="playerGreeting">Wähle ein Spiel</h1>
+            <button class="text-button home-board-link" id="openBoardFromHome" type="button">▣ Zur Tafelversion</button>
           </div>
           <div class="today-card" aria-label="Heutiger Fortschritt">
             <span>Heute geschafft</span>
@@ -107,9 +109,65 @@
             </span>
             <span class="card-arrow" aria-hidden="true">›</span>
           </button>
+
+          <button class="game-card game-card--secret" type="button" data-open-game="secret">
+            <span class="game-icon" aria-hidden="true">🎰</span>
+            <span class="game-copy">
+              <strong>Anlaut-Geheimwort</strong>
+              <small>Bilder drehen und das Wort lesen</small>
+            </span>
+            <span class="card-arrow" aria-hidden="true">›</span>
+          </button>
         </div>
 
         <p class="privacy-note">Ohne Anmeldung · Ergebnisse bleiben auf diesem Gerät</p>
+      </section>
+
+      <section class="screen board-home-screen" data-screen="board-home" hidden>
+        <button class="back-button" type="button" data-back-home>‹ Zur Kinder-App</button>
+        <div class="board-home-content">
+          <p class="eyebrow">Für die ganze Klasse</p>
+          <h1>Tafelversion</h1>
+          <p class="setup-hint">Wähle ein Spiel für die Projektion. Hier können später weitere Tafelspiele hinzukommen.</p>
+          <button class="game-card game-card--secret board-game-card" id="openBoardSecret" type="button">
+            <span class="game-icon" aria-hidden="true">🎰</span>
+            <span class="game-copy"><strong>Anlaut-Geheimwort</strong><small>Große Bilder · gemeinsam lesen · ohne Namenseingabe</small></span>
+            <span class="card-arrow" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="screen board-setup-screen" data-screen="board-secret-setup" hidden>
+        <button class="back-button" type="button" data-board-home>‹ Zur Tafelversion</button>
+        <div class="setup-card board-setup-card">
+          <div class="round-icon round-icon--secret" aria-hidden="true">🎰</div>
+          <p class="eyebrow">Tafelversion · Anlauttabelle</p>
+          <h1>Wie lang soll das Geheimwort sein?</h1>
+          <p class="setup-hint">Für jede Länge stehen 20 verschiedene Wörter bereit. Alle kommen einmal dran, bevor die Liste neu gemischt wird.</p>
+          <div class="level-list" role="group" aria-label="Anzahl der Lautbilder an der Tafel">
+            <button class="level-button selected" type="button" data-board-length="3"><span class="level-icon" aria-hidden="true">🐣</span><span class="level-copy"><strong>3 Laute</strong><span>Kurze Wörter</span></span></button>
+            <button class="level-button" type="button" data-board-length="4"><span class="level-icon" aria-hidden="true">🐿️</span><span class="level-copy"><strong>4 Laute</strong><span>Mittlere Wörter</span></span></button>
+            <button class="level-button" type="button" data-board-length="5"><span class="level-icon" aria-hidden="true">🦊</span><span class="level-copy"><strong>5 Laute</strong><span>Längere Wörter</span></span></button>
+          </div>
+          <button class="primary-button" id="startBoardSecret" type="button">Geheimwort starten</button>
+        </div>
+      </section>
+
+      <section class="screen board-play-screen" data-screen="board-secret-play" hidden>
+        <div class="board-toolbar">
+          <button class="back-button" type="button" data-board-home>‹ Tafelspiele</button>
+          <span class="board-toolbar-title">🎰 Anlaut-Geheimwort</span>
+          <button class="back-button" id="changeBoardLength" type="button">Wortlänge ändern</button>
+        </div>
+        <div class="board-stage">
+          <p class="board-instruction" id="boardInstruction" aria-live="polite">Die Bilder drehen sich …</p>
+          <div class="board-reels" id="boardReels" aria-label="Bilder des Geheimworts"></div>
+          <div class="board-solution" id="boardSolution" hidden aria-live="polite"></div>
+          <div class="board-actions">
+            <button class="primary-button" id="boardReveal" type="button" disabled>Lösung zeigen</button>
+            <button class="secondary-button" id="boardNext" type="button" hidden>Nächstes Wort ›</button>
+          </div>
+        </div>
       </section>
 
       <section class="screen setup-screen" data-screen="flash-setup" hidden>
@@ -158,6 +216,24 @@
             <button class="level-button" type="button" data-swing-level="hard"><span class="level-icon" aria-hidden="true">🦒</span><span class="level-copy"><strong>Lang</strong><span>Lange und schwierige Wörter</span></span></button>
           </div>
           <button class="primary-button" id="startSwing" type="button">Zehn Wörter starten</button>
+        </div>
+      </section>
+
+      <section class="screen setup-screen" data-screen="secret-setup" hidden>
+        <button class="back-button" type="button" data-back-home>‹ Zurück</button>
+        <div class="setup-card secret-setup-card">
+          <div class="round-icon round-icon--secret" aria-hidden="true">🎰</div>
+          <p class="eyebrow">Anlauttabelle</p>
+          <h1>Welches Geheimwort steckt in den Bildern?</h1>
+          <p class="setup-hint">Die Bilder drehen sich und bleiben nacheinander stehen. Lies die Laute von links nach rechts und sprich das Wort laut aus. „Au“ oder „Sch“ zählen jeweils als ein Bild. Für jede Länge gibt es 20 Wörter; pro Runde erscheinen zehn davon.</p>
+          <div class="level-list" role="radiogroup" aria-label="Anzahl der Lautbilder">
+            <button class="level-button selected" type="button" data-secret-length="3"><span class="level-icon" aria-hidden="true">🐣</span><span class="level-copy"><strong>3 Laute</strong><span>Kurze Geheimwörter</span></span></button>
+            <button class="level-button" type="button" data-secret-length="4"><span class="level-icon" aria-hidden="true">🐿️</span><span class="level-copy"><strong>4 Laute</strong><span>Mittlere Geheimwörter</span></span></button>
+            <button class="level-button" type="button" data-secret-length="5"><span class="level-icon" aria-hidden="true">🦊</span><span class="level-copy"><strong>5 Laute</strong><span>Längere Geheimwörter</span></span></button>
+          </div>
+          <button class="primary-button" id="startSecret" type="button">Zehn Geheimwörter starten</button>
+          <button class="text-button secret-table-toggle" id="toggleAnlautTable" type="button" aria-expanded="false">Anlauttabelle ansehen</button>
+          <div class="anlaut-table" id="anlautTable" hidden aria-label="Anlauttabelle"></div>
         </div>
       </section>
 
@@ -260,6 +336,27 @@
           </div>
           <button class="secondary-button swing-clear" id="clearSwings" type="button">Bögen löschen</button>
           <div class="feedback-line" id="swingFeedback" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="screen play-screen" data-screen="secret-play" hidden>
+        <div class="play-header">
+          <button class="close-button" type="button" data-back-home aria-label="Spiel beenden">×</button>
+          <div class="progress-wrap">
+            <span id="secretRoundLabel">Wort 1 von 10</span>
+            <div class="progress-track progress-track--secret"><span id="secretProgress"></span></div>
+          </div>
+          <div class="mini-score"><span aria-hidden="true">★</span><strong id="secretScore">0</strong></div>
+        </div>
+        <div class="secret-stage">
+          <p class="instruction" id="secretInstruction">Die Bilder drehen sich …</p>
+          <div class="secret-reels" id="secretReels" aria-label="Bilder des Geheimworts"></div>
+          <button class="primary-button" id="revealSecret" type="button" disabled>Lösung zeigen</button>
+          <div class="secret-solution" id="secretSolution" hidden aria-live="polite"></div>
+          <div class="secret-evaluation" id="secretEvaluation" hidden>
+            <button class="primary-button" id="secretCorrect" type="button">Richtig gelesen ★</button>
+            <button class="secondary-button" id="secretPractice" type="button">Noch üben</button>
+          </div>
         </div>
       </section>
 
