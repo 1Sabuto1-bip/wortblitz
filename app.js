@@ -155,42 +155,42 @@ const ANLAUT_SYMBOLS = {
   v: "Vogel", c: "Computer", qu: "Qualle", sp: "Spinne", st: "Stern"
 };
 
-const SECRET_WORDS = {
-  3: [
-    ["Haus", "h", "au", "s"], ["Maus", "m", "au", "s"],
-    ["Baum", "b", "au", "m"], ["Hut", "h", "u", "t"], ["Mut", "m", "u", "t"],
-    ["Bus", "b", "u", "s"], ["Rot", "r", "o", "t"], ["Tor", "t", "o", "r"],
-    ["Reis", "r", "ei", "s"], ["Fisch", "f", "i", "sch"], ["Tisch", "t", "i", "sch"],
-    ["Schaf", "sch", "a", "f"], ["Oma", "o", "m", "a"], ["Opa", "o", "p", "a"],
-    ["Arm", "a", "r", "m"], ["Ast", "a", "s", "t"], ["Tal", "t", "a", "l"],
-    ["Wal", "w", "a", "l"], ["Hof", "h", "o", "f"], ["Wut", "w", "u", "t"]
-  ],
-  4: [
-    ["Hase", "h", "a", "s", "e"], ["Nase", "n", "a", "s", "e"],
-    ["Hose", "h", "o", "s", "e"], ["Rose", "r", "o", "s", "e"],
-    ["Mama", "m", "a", "m", "a"], ["Papa", "p", "a", "p", "a"],
-    ["Lama", "l", "a", "m", "a"], ["Sofa", "s", "o", "f", "a"],
-    ["Kino", "k", "i", "n", "o"], ["Dino", "d", "i", "n", "o"],
-    ["Mond", "m", "o", "n", "d"], ["Kind", "k", "i", "n", "d"],
-    ["Wind", "w", "i", "n", "d"], ["Hand", "h", "a", "n", "d"],
-    ["Schule", "sch", "u", "l", "e"], ["Seife", "s", "ei", "f", "e"],
-    ["Ente", "e", "n", "t", "e"], ["Rabe", "r", "a", "b", "e"],
-    ["Raupe", "r", "au", "p", "e"], ["Frosch", "f", "r", "o", "sch"]
-  ],
-  5: [
-    ["Blume", "b", "l", "u", "m", "e"], ["Lampe", "l", "a", "m", "p", "e"],
-    ["Maske", "m", "a", "s", "k", "e"],
-    ["Nudel", "n", "u", "d", "e", "l"], ["Rinde", "r", "i", "n", "d", "e"],
-    ["Birne", "b", "i", "r", "n", "e"], ["Tinte", "t", "i", "n", "t", "e"],
-    ["Farbe", "f", "a", "r", "b", "e"], ["Karte", "k", "a", "r", "t", "e"],
-    ["Kiste", "k", "i", "s", "t", "e"], ["Wolke", "w", "o", "l", "k", "e"],
-    ["Tafel", "t", "a", "f", "e", "l"], ["Harke", "h", "a", "r", "k", "e"],
-    ["Salat", "s", "a", "l", "a", "t"], ["Kamel", "k", "a", "m", "e", "l"],
-    ["Faden", "f", "a", "d", "e", "n"], ["Regen", "r", "e", "g", "e", "n"],
-    ["Wagen", "w", "a", "g", "e", "n"], ["Nagel", "n", "a", "g", "e", "l"],
-    ["Hafen", "h", "a", "f", "e", "n"]
-  ]
-};
+// Eine CSV-Datei ist die einzige Quelle für das Geheimwort-Lexikon.
+const SECRET_WORDS = { 3: [], 4: [], 5: [] };
+let secretWordsRequest = null;
+
+function loadSecretWords() {
+  if (secretWordsRequest) return secretWordsRequest;
+  secretWordsRequest = (async () => {
+    const response = await fetch("secret-words.csv", { cache: "no-store" });
+    if (!response.ok) throw new Error("Geheimwortliste nicht erreichbar");
+    const lines = (await response.text()).replace(/^\uFEFF/, "").split(/\r?\n/);
+    const groups = { 3: [], 4: [], 5: [] };
+    const seen = { 3: new Set(), 4: new Set(), 5: new Set() };
+    lines.slice(1).forEach((line, index) => {
+      if (!line.trim() || line.trim().startsWith("#")) return;
+      const fields = line.split(";").map((part) => part.trim());
+      const length = Number(fields[0]);
+      const word = fields[1];
+      const symbols = (fields[2] || "").toLowerCase().split("-").map((part) => part.trim());
+      const key = word?.toLocaleLowerCase("de");
+      const spelling = key?.replaceAll("ö", "oe").replaceAll("ü", "ue");
+      if (fields.length !== 3 || !groups[length] || !/^[A-Za-zÄÖÜäöüß]+$/.test(word || "")
+          || symbols.length !== length || symbols.some((symbol) => !ANLAUT_SYMBOLS[symbol])
+          || symbols.join("") !== spelling || seen[length].has(key)) {
+        console.warn(`Geheimwortliste: ungültige oder doppelte Zeile ${index + 2}`);
+        return;
+      }
+      seen[length].add(key);
+      groups[length].push([word, ...symbols]);
+    });
+    if ([3, 4, 5].some((length) => groups[length].length < TOTALS.secret)) {
+      throw new Error("Mindestens zehn gültige Wörter je Länge sind erforderlich");
+    }
+    [3, 4, 5].forEach((length) => { SECRET_WORDS[length] = groups[length]; });
+  })().finally(() => { secretWordsRequest = null; });
+  return secretWordsRequest;
+}
 
 const TOTALS = { flash: 20, chain: 10, real: 12, sentence: 5, swing: 10, secret: 10 };
 const screens = [...document.querySelectorAll("[data-screen]")];
@@ -1106,7 +1106,19 @@ function renderAnlautTable() {
   });
 }
 
-function startSecret() {
+async function startSecret() {
+  const button = $("#startSecret");
+  button.disabled = true;
+  try {
+    await loadSecretWords();
+  } catch {
+    if (!SECRET_WORDS[state.secretLength].length) {
+      alert("Die Geheimwortliste konnte nicht geladen werden. Bitte prüfe die Verbindung und die Datei secret-words.csv.");
+      button.disabled = false;
+      return;
+    }
+  }
+  button.disabled = false;
   Object.assign(state, {
     game: "secret",
     secretWords: sample(SECRET_WORDS[state.secretLength], TOTALS.secret),
@@ -1194,15 +1206,29 @@ function showBoardHome() {
   showScreen("board-home");
 }
 
-function startBoardSecret() {
+async function startBoardSecret() {
+  const button = $("#startBoardSecret");
+  button.disabled = true;
+  try {
+    await loadSecretWords();
+  } catch {
+    if (!SECRET_WORDS[state.boardLength].length) {
+      alert("Die Geheimwortliste konnte nicht geladen werden. Bitte prüfe die Verbindung und die Datei secret-words.csv.");
+      button.disabled = false;
+      return;
+    }
+  }
+  button.disabled = false;
   state.boardWord = null;
-  state.boardDeck = [];
+  state.boardDeck = shuffle(SECRET_WORDS[state.boardLength]);
   showScreen("board-secret-play");
   nextBoardWord();
 }
 
-function nextBoardWord() {
+async function nextBoardWord() {
+  $("#boardNext").hidden = true;
   if (!state.boardDeck.length) {
+    await loadSecretWords().catch(() => {}); // Offline bleibt die bisherige Liste verfügbar.
     state.boardDeck = shuffle(SECRET_WORDS[state.boardLength]);
     if (state.boardWord && state.boardDeck[0] === state.boardWord) {
       [state.boardDeck[0], state.boardDeck[1]] = [state.boardDeck[1], state.boardDeck[0]];
@@ -1781,5 +1807,6 @@ applyActiveWordPool();
 updateStatsView();
 setSoundButton();
 loadSharedWords();
+loadSecretWords().catch(() => {});
 window.setInterval(loadSharedWords, 60000);
 showScreen(profile ? "home" : "profile");

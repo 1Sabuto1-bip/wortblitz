@@ -7,7 +7,7 @@ Eine statische, datensparsame Web-App mit sechs Übungen:
 - **Satzblitz:** Wörter nacheinander kurz sehen, wiedererkennen und fünf vollständige Sätze ordnen. Drei Stufen steuern die Satzlänge.
 - **Richtig oder erfunden?:** Echte Wörter von lauttreuen Fantasiewörtern unterscheiden.
 - **Silbenschwingen:** Unter zehn möglichst breit dargestellten Wörtern mit dem Finger alle Silbenbögen verbunden in einem Zug zeichnen. Die äußeren Enden dürfen versetzt sein; die inneren Hochpunkte müssen an der tatsächlichen Silbengrenze liegen (mit Toleranz innerhalb eines Buchstabens). Drei Stufen steuern die Wortlänge; alle Vokale werden blau markiert.
-- **Anlaut-Geheimwort:** Bildsymbole drehen sich wie Spielautomatenwalzen und stoppen der Reihe nach. Nach dem lauten Lesen deckt das Kind die Lösung auf und bewertet sich selbst. Wählbar sind 3, 4 oder 5 Lautbilder; `au`, `ei`, `eu`, `sch` usw. belegen jeweils nur ein Feld. Jede Länge hat 20 verschiedene kindgerechte Wörter. Die Kinder-App wählt zehn davon pro Runde; an der Tafel erscheinen alle 20 ohne Wiederholung, bevor die Liste neu gemischt wird.
+- **Anlaut-Geheimwort:** Bildsymbole drehen sich wie Spielautomatenwalzen und stoppen der Reihe nach. Nach dem lauten Lesen deckt das Kind die Lösung auf und bewertet sich selbst. Wählbar sind 3, 4 oder 5 Lautbilder; `au`, `ei`, `eu`, `sch` usw. belegen jeweils nur ein Feld. Jede Länge hat jetzt 30 verschiedene kindgerechte Wörter. Die Kinder-App wählt zehn davon pro Runde; an der Tafel erscheinen alle Wörter einer Länge ohne Wiederholung, bevor die Liste neu gemischt wird.
 
 Auf der Startseite mit der Namenseingabe führt **Tafelversion** in einen eigenen Bereich ohne Kinderprofil. Dort ist zunächst **Anlaut-Geheimwort** verfügbar: besonders große Bildkarten, Auswahl von 3/4/5 Lautbildern, optionale Lösungsanzeige und beliebig viele weitere Wörter. Weitere Tafelspiele können später im selben Bereich ergänzt werden. Auch aus der Kinder-Startseite ist die Tafelversion erreichbar. Die Tafelrunde verändert weder Punkte noch Kinderstatistik.
 
@@ -26,6 +26,22 @@ Zu Beginn gibt jedes Kind seinen Namen und seine Klassenstufe (2, 3 oder 4) ein.
 Nach dem ersten vollständigen Laden werden die benötigten Dateien zwischengespeichert. Dadurch funktioniert die App anschließend auch bei einer unterbrochenen Internetverbindung.
 
 Die Anlautsymbole stammen aus einer Buchvorlage. Vor einer öffentlichen Veröffentlichung der Bilddateien über GitHub Pages die Bildrechte für diesen Einsatz klären. Für den Betrieb muss der Ordner `anlaute/` mit hochgeladen werden.
+
+## Geheimwörter direkt auf GitHub ergänzen
+
+Das Lexikon liegt vollständig in `secret-words.csv` im Hauptordner des Repositories. Öffne diese Datei auf GitHub, klicke auf das Stiftsymbol **Edit this file**, ergänze unten eine Zeile und speichere mit **Commit changes**. Du musst dafür `app.js` nicht bearbeiten.
+
+Jede Zeile hat drei Spalten, getrennt durch Semikolon: `Laute;Wort;Symbole`. Die Bildkürzel in der dritten Spalte werden mit Bindestrichen getrennt:
+
+```csv
+3;Haus;h-au-s
+4;Schule;sch-u-l-e
+5;Blume;b-l-u-m-e
+```
+
+Die Zahl bezeichnet die **Anzahl der Bilder**, nicht die Zahl der Buchstaben. `au`, `ei`, `eu`, `sch`, `ch`, `sp`, `st`, `qu`, `oe` (Ö) und `ue` (Ü) sind jeweils ein Bild. Erlaubt sind nur Kürzel, für die eine Bilddatei im Ordner `anlaute/` vorhanden ist. Ein Wort darf pro Länge nur einmal vorkommen; die aneinandergereihten Kürzel müssen genau seine Schreibweise ergeben. Leere Zeilen oder Zeilen, die mit `#` beginnen, werden ignoriert. Ungültige Zeilen überspringt die App; mindestens zehn gültige Wörter pro Länge müssen bleiben.
+
+Nach dem Speichern braucht GitHub Pages üblicherweise kurz für die Veröffentlichung. Eine neue Kinder- oder Tafelrunde lädt die CSV neu. Läuft die App ohne Internet, wird die zuletzt zwischengespeicherte Liste genutzt. Das Admin-Wortlexikon `words.json` für die anderen Spiele bleibt unabhängig davon.
 
 ## Adminzugang einmalig einrichten
 
