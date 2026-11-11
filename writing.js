@@ -17,6 +17,11 @@ const WRITING_CARDS = [
   { key: "P", name: "Pinguin" }
 ];
 const SVG_NS = "http://www.w3.org/2000/svg";
+// Koordinaten beziehen sich auf die 320 × 320 große Schreibfläche.
+// Kleine seitliche Abweichungen sind erlaubt; die Reihenfolge bleibt bindend.
+const WRITING_START_TOLERANCE = 33;
+const WRITING_PATH_TOLERANCE = 33;
+const WRITING_END_TOLERANCE = 24;
 const writing = {
   selected: WRITING_CARDS.map((card) => card.key),
   letters: [], index: 0, streak: 0, stroke: 0,
@@ -137,7 +142,7 @@ function writingDown(event) {
   if (writing.waiting || writing.active || document.querySelector("[data-screen='writing-play']").hidden) return;
   const point = writingPoint(event);
   const start = writing.paths[writing.stroke].getPointAtLength(0);
-  if (distance(point, start) > 27) {
+  if (distance(point, start) > WRITING_START_TOLERANCE) {
     writingFeedback("Setze den Finger auf den blauen Punkt.", "try");
     return;
   }
@@ -166,7 +171,7 @@ function writingMove(event) {
     }
     const endGap = distance(current, path.getPointAtLength(length));
     if (length - writing.progress <= 23 && endGap < nearest) { nearest = endGap; candidate = length; }
-    if (nearest > 26) return failWriting();
+    if (nearest > WRITING_PATH_TOLERANCE) return failWriting();
     writing.progress = Math.min(candidate, writing.progress + distance(previous, current) * 1.7 + 1);
     previous = current;
   }
@@ -179,7 +184,7 @@ function writingUp(event) {
   writingMove(event);
   if (!writing.active) return;
   writing.active = null;
-  if (writing.lengths[writing.stroke] - writing.progress > 18) return failWriting();
+  if (writing.lengths[writing.stroke] - writing.progress > WRITING_END_TOLERANCE) return failWriting();
   if (++writing.stroke < writing.paths.length) {
     writing.progress = 0;
     writingFeedback("Gut! Jetzt der nächste Zug.", "good");
