@@ -1,6 +1,6 @@
 # Wortblitz – Lesetraining für Klasse 2 bis 4
 
-Eine statische, datensparsame Web-App mit sechs Übungen:
+Eine statische, datensparsame Web-App mit sieben Übungen:
 
 - **Blitzwort:** 20 Wörter mit vier Schwierigkeitsstufen. Anzeigedauer und Auswahlmenge steigen von vier auf sechs Wörter.
 - **Lesekette:** Zehn Wörter nacheinander aus jeweils zwölf Möglichkeiten erkennen. Ein Fehler setzt die Kette zurück; Fehlversuche werden ausgewertet.
@@ -8,6 +8,7 @@ Eine statische, datensparsame Web-App mit sechs Übungen:
 - **Richtig oder erfunden?:** Echte Wörter von lauttreuen Fantasiewörtern unterscheiden.
 - **Silbenschwingen:** Unter zehn möglichst breit dargestellten Wörtern mit dem Finger alle Silbenbögen verbunden in einem Zug zeichnen. Die äußeren Enden dürfen versetzt sein; die inneren Hochpunkte müssen an der tatsächlichen Silbengrenze liegen (mit Toleranz innerhalb eines Buchstabens). Drei Stufen steuern die Wortlänge; alle Vokale werden blau markiert.
 - **Anlaut-Geheimwort:** Bildsymbole drehen sich wie Spielautomatenwalzen und stoppen der Reihe nach. Nach dem lauten Lesen deckt das Kind die Lösung auf und bewertet sich selbst. Wählbar sind 3, 4 oder 5 Lautbilder; `au`, `ei`, `eu`, `sch` usw. belegen jeweils nur ein Feld. Jede Länge hat jetzt 30 verschiedene kindgerechte Wörter. Die Kinder-App wählt zehn davon pro Runde; an der Tafel erscheinen alle Wörter einer Länge ohne Wiederholung, bevor die Liste neu gemischt wird.
+- **Schreiben:** Die vier eingescannten Karten D/d, C/c, B/b und P/p stehen als Vorlage bereit. Kinder fahren den großen Buchstaben mit dem Finger vom markierten Startpunkt aus in Zugreihenfolge nach. Erst nach drei richtigen vollständigen Schreibwegen hintereinander folgt die nächste Buchstabenform; ein Fehler beginnt die Dreierfolge neu. Die Erkennung prüft den Weg und seine Richtung mit einer fingerfreundlichen Toleranz. Die freie Schrift in Liniatur ist als nächster Ausbauschritt vorgesehen.
 
 Auf der Startseite mit der Namenseingabe führt **Tafelversion** in einen eigenen Bereich ohne Kinderprofil. Dort ist zunächst **Anlaut-Geheimwort** verfügbar: besonders große Bildkarten, Auswahl von 3/4/5 Lautbildern, optionale Lösungsanzeige und beliebig viele weitere Wörter. Weitere Tafelspiele können später im selben Bereich ergänzt werden. Auch aus der Kinder-Startseite ist die Tafelversion erreichbar. Die Tafelrunde verändert weder Punkte noch Kinderstatistik.
 
@@ -26,6 +27,8 @@ Zu Beginn gibt jedes Kind seinen Namen und seine Klassenstufe (2, 3 oder 4) ein.
 Nach dem ersten vollständigen Laden werden die benötigten Dateien zwischengespeichert. Dadurch funktioniert die App anschließend auch bei einer unterbrochenen Internetverbindung.
 
 Die Anlautsymbole stammen aus einer Buchvorlage. Vor einer öffentlichen Veröffentlichung der Bilddateien über GitHub Pages die Bildrechte für diesen Einsatz klären. Für den Betrieb muss der Ordner `anlaute/` mit hochgeladen werden.
+
+Die Rubrik Schreiben verwendet die vier bereitgestellten Scans als kleine Referenzkarten. Der Ordner `writing-cards/` und die Datei `writing.js` müssen zusammen mit der App veröffentlicht werden.
 
 ## Geheimwörter direkt auf GitHub ergänzen
 

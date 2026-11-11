@@ -118,6 +118,11 @@
             </span>
             <span class="card-arrow" aria-hidden="true">›</span>
           </button>
+          <button class="game-card game-card--writing" type="button" data-open-game="writing">
+            <span class="game-icon" aria-hidden="true">✎</span>
+            <span class="game-copy"><strong>Schreiben</strong><small>Buchstaben in Schreibrichtung nachspuren</small></span>
+            <span class="card-arrow" aria-hidden="true">›</span>
+          </button>
         </div>
 
         <p class="privacy-note">Ohne Anmeldung · Ergebnisse bleiben auf diesem Gerät</p>
@@ -234,6 +239,42 @@
           <button class="primary-button" id="startSecret" type="button">Zehn Geheimwörter starten</button>
           <button class="text-button secret-table-toggle" id="toggleAnlautTable" type="button" aria-expanded="false">Anlauttabelle ansehen</button>
           <div class="anlaut-table" id="anlautTable" hidden aria-label="Anlauttabelle"></div>
+        </div>
+      </section>
+
+      <section class="screen setup-screen" data-screen="writing-setup" hidden>
+        <button class="back-button" type="button" data-back-home>‹ Zurück</button>
+        <div class="setup-card writing-setup-card">
+          <div class="round-icon round-icon--writing" aria-hidden="true">✎</div>
+          <p class="eyebrow">Schreiben · Buchstaben nachspuren</p>
+          <h1>Welchen Buchstaben übst du?</h1>
+          <p class="setup-hint">Fahre mit dem Finger vom blauen Punkt aus über die Linie. Folge der Richtung und übe Groß- und Kleinbuchstaben. Nach drei richtigen Versuchen hintereinander geht es weiter.</p>
+          <div class="writing-card-grid" id="writingCards"></div>
+          <button class="primary-button" id="writingAll" type="button">Alle vier Karten üben</button>
+        </div>
+      </section>
+
+      <section class="screen play-screen writing-play-screen" data-screen="writing-play" hidden>
+        <div class="play-header">
+          <button class="close-button" type="button" data-back-home aria-label="Übung beenden">×</button>
+          <div class="progress-wrap">
+            <span id="writingRoundLabel">Buchstabe 1 von 8</span>
+            <div class="progress-track"><span id="writingProgress"></span></div>
+          </div>
+          <div class="mini-score"><span>★</span><strong id="writingStreak">0/3</strong></div>
+        </div>
+        <div class="writing-layout">
+          <div class="writing-reference">
+            <img id="writingCardImage" alt="Buchstabenkarte aus der Vorlage">
+            <span>Vorlage</span>
+          </div>
+          <div class="writing-work">
+            <h1 id="writingLetterLabel">D</h1>
+            <p class="instruction" id="writingInstruction">Beginne am blauen Punkt.</p>
+            <svg id="writingSurface" viewBox="0 0 320 320" role="img" aria-label="Buchstaben nachspuren"></svg>
+            <div id="writingFeedback" class="feedback-line" aria-live="polite"></div>
+            <button class="secondary-button" id="writingReset" type="button">Noch einmal beginnen</button>
+          </div>
         </div>
       </section>
 
@@ -451,5 +492,6 @@
     </main>
   </div>
   <script src="app.js"></script>
+  <script src="writing.js"></script>
 </body>
 </html>

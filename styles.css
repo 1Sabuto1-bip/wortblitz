@@ -77,6 +77,8 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.05; letter-s
 .game-card--swing { grid-column: 1 / -1; background: linear-gradient(135deg, #ffc6db, #ef87ad); }
 .game-card--swing .game-icon { color: #9d2855; font-size: 2.8rem; }
 .game-card--secret { grid-column: 1 / -1; background: linear-gradient(135deg, #ffe3aa, #ffc078); }
+.game-card--writing { grid-column: 1 / -1; background: linear-gradient(135deg, #cde9fc, #8ec9ef); }
+.game-card--writing .game-icon { color: #1a6199; font-size: 2.5rem; }
 .game-icon { display: grid; place-items: center; width: 70px; height: 70px; border-radius: 22px; background: rgba(255, 255, 255, .72); font-size: 2.1rem; font-weight: 900; }
 .game-copy { display: flex; flex-direction: column; gap: 8px; }
 .game-copy strong { font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.05; }
@@ -184,6 +186,30 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.05; letter-s
 .anlaut-item { display: grid; place-items: center; gap: 6px; padding: 8px; border-radius: 14px; background: white; }
 .anlaut-item svg { width: 72px; height: 70px; }
 .anlaut-item strong { color: var(--ink); font-size: 1.2rem; }
+
+.round-icon--writing { background: #d9edfa; color: #176ac6; }
+.writing-setup-card { width: min(100%, 900px); }
+.writing-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 24px 0; }
+.writing-card-option { display: flex; flex-direction: column; align-items: center; gap: 9px; min-height: 195px; padding: 10px; border: 3px solid #d0e2ee; border-radius: 20px; background: white; color: var(--ink); box-shadow: 0 5px 15px rgba(23, 63, 95, .08); cursor: pointer; }
+.writing-card-option:hover, .writing-card-option:focus-visible { border-color: #3d74b9; }
+.writing-card-option img { display: block; width: 100%; height: 130px; object-fit: contain; }
+.writing-card-option span { display: flex; flex-direction: column; align-items: center; }
+.writing-card-option strong { font-size: 1.35rem; }
+.writing-card-option small { color: var(--muted); }
+.writing-layout { display: grid; grid-template-columns: minmax(135px, 205px) minmax(0, 1fr); align-items: start; gap: 24px; margin: 22px auto 0; width: min(100%, 840px); }
+.writing-reference { padding: 10px; border-radius: 21px; background: white; box-shadow: var(--shadow); text-align: center; }
+.writing-reference img { display: block; width: 100%; border-radius: 9px; }
+.writing-reference span { display: block; margin-top: 8px; color: var(--muted); font-size: .85rem; font-weight: 800; }
+.writing-work { min-width: 0; text-align: center; }
+.writing-work h1 { margin: 0 0 6px; font-size: 2.1rem; }
+.writing-work .instruction { min-height: 2.5em; margin: 0 0 10px; }
+#writingSurface { display: block; width: min(100%, 470px); margin: 0 auto; border: 3px solid #c7dbe7; border-radius: 22px; background: white; box-shadow: var(--shadow); touch-action: none; cursor: crosshair; user-select: none; }
+.writing-guide { fill: none; stroke: #cbd7e0; stroke-width: 23; stroke-linecap: round; stroke-linejoin: round; }
+.writing-guide.is-active { stroke: #a8bfd2; }
+.writing-completed, .writing-ink { fill: none; stroke: #16766b; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.writing-ink { stroke: #176ac6; }
+.writing-work .feedback-line { margin: 11px 0; }
+.writing-work .secondary-button { min-height: 46px; padding: 9px 18px; }
 
 .board-entry { display: block; width: min(100%, 430px); margin: 20px auto 0; }
 .home-board-link { margin-top: 18px; font-size: 1.04rem; }
@@ -295,6 +321,12 @@ body.board-mode main { width: 100%; max-width: none; }
   .csv-actions { flex-direction: column; }
   .game-card--swing { grid-column: auto; }
   .game-card--secret { grid-column: auto; }
+  .game-card--writing { grid-column: auto; }
+  .writing-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .writing-layout { grid-template-columns: 1fr; gap: 12px; }
+  .writing-reference { display: flex; align-items: center; gap: 12px; width: 100%; padding: 7px; }
+  .writing-reference img { width: 64px; height: 82px; object-fit: contain; }
+  .writing-work .instruction { min-height: 0; }
   .swing-drawing { padding-inline: 12px; }
   .swing-word { font-size: 70px; }
   .secret-reel { border-width: 2px; border-radius: 12px; }

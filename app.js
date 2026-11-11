@@ -455,6 +455,7 @@ function openGame(game) {
   if (game === "sentence") showScreen("sentence-setup");
   if (game === "swing") showScreen("swing-setup");
   if (game === "secret") showScreen("secret-setup");
+  if (game === "writing") showScreen("writing-setup");
 }
 
 function startFlash() {
@@ -1330,6 +1331,7 @@ function replay() {
   if (state.game === "sentence") startSentence();
   if (state.game === "swing") startSwing();
   if (state.game === "secret") startSecret();
+  if (state.game === "writing") startWriting();
 }
 
 const ADMIN_STORAGE_KEY = "wortblitz-admin-config-v1";
