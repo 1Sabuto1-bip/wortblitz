@@ -154,6 +154,16 @@
             <button class="level-button" type="button" data-board-length="4"><span class="level-icon" aria-hidden="true">🐿️</span><span class="level-copy"><strong>4 Laute</strong><span>Mittlere Wörter</span></span></button>
             <button class="level-button" type="button" data-board-length="5"><span class="level-icon" aria-hidden="true">🦊</span><span class="level-copy"><strong>5 Laute</strong><span>Längere Wörter</span></span></button>
           </div>
+          <details class="board-sound-options" id="boardSoundOptions">
+            <summary>Anlaute auswählen <span id="boardSoundSelectionCount">Alle Anlaute</span></summary>
+            <p>Tippe die Anlaute an, die in den Geheimwörtern vorkommen dürfen. Standardmäßig sind alle ausgewählt.</p>
+            <div class="board-sound-actions">
+              <button class="secondary-button" id="boardSelectAllSounds" type="button">Alle auswählen</button>
+              <button class="secondary-button" id="boardClearSounds" type="button">Auswahl aufheben</button>
+            </div>
+            <div class="board-sound-grid" id="boardSoundGrid" role="group" aria-label="Erlaubte Anlaute"></div>
+          </details>
+          <p class="board-sound-status" id="boardSoundStatus" role="status" aria-live="polite"></p>
           <button class="primary-button" id="startBoardSecret" type="button">Geheimwort starten</button>
         </div>
       </section>
@@ -162,7 +172,7 @@
         <div class="board-toolbar">
           <button class="back-button" type="button" data-board-home>‹ Tafelspiele</button>
           <span class="board-toolbar-title">🎰 Anlaut-Geheimwort</span>
-          <button class="back-button" id="changeBoardLength" type="button">Wortlänge ändern</button>
+          <button class="back-button" id="changeBoardLength" type="button">Auswahl ändern</button>
         </div>
         <div class="board-stage">
           <p class="board-instruction" id="boardInstruction" aria-live="polite">Die Bilder drehen sich …</p>

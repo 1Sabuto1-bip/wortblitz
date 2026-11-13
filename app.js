@@ -233,6 +233,8 @@ const state = {
   secretScore: 0,
   secretReady: false,
   boardLength: 3,
+  boardSounds: new Set(Object.keys(ANLAUT_SYMBOLS)),
+  boardPool: [],
   boardWord: null,
   boardDeck: [],
   boardReady: false,
@@ -1207,6 +1209,66 @@ function showBoardHome() {
   showScreen("board-home");
 }
 
+function boardEligibleWords() {
+  return SECRET_WORDS[state.boardLength].filter((word) =>
+    word.slice(1).every((sound) => state.boardSounds.has(sound)));
+}
+
+function updateBoardSoundOptions() {
+  const allSounds = Object.keys(ANLAUT_SYMBOLS);
+  const count = state.boardSounds.size;
+  $("#boardSoundSelectionCount").textContent = count === allSounds.length
+    ? "Alle Anlaute" : `${count} von ${allSounds.length} ausgewählt`;
+  $$("#boardSoundGrid button").forEach((button) => {
+    const selected = state.boardSounds.has(button.dataset.sound);
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  const status = $("#boardSoundStatus");
+  const available = boardEligibleWords().length;
+  if (!SECRET_WORDS[state.boardLength].length) {
+    status.textContent = "Die Wortliste wird geladen …";
+  } else if (!available) {
+    status.textContent = "Kein Wort passt zu dieser Auswahl. Wähle weitere Anlaute.";
+  } else {
+    status.textContent = `${available} ${available === 1 ? "passendes Geheimwort" : "passende Geheimwörter"} mit ${state.boardLength} Lautbildern.`;
+  }
+  status.classList.toggle("is-empty", !available && !!SECRET_WORDS[state.boardLength].length);
+  $("#startBoardSecret").disabled = !available;
+}
+
+function renderBoardSoundOptions() {
+  const grid = $("#boardSoundGrid");
+  if (grid.childElementCount) return;
+  Object.entries(ANLAUT_SYMBOLS).forEach(([sound, name]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "board-sound selected";
+    button.dataset.sound = sound;
+    button.setAttribute("aria-label", `${sound.toUpperCase()} wie ${name}`);
+    button.append(createAnlautPicture(sound));
+    const letters = document.createElement("strong");
+    letters.textContent = { oe: "Ö", ue: "Ü" }[sound] || sound.toUpperCase();
+    button.append(letters);
+    button.addEventListener("click", () => {
+      if (state.boardSounds.has(sound)) state.boardSounds.delete(sound);
+      else state.boardSounds.add(sound);
+      updateBoardSoundOptions();
+    });
+    grid.append(button);
+  });
+  updateBoardSoundOptions();
+}
+
+function showBoardSecretSetup() {
+  showScreen("board-secret-setup");
+  renderBoardSoundOptions();
+  loadSecretWords().then(updateBoardSoundOptions).catch(() => {
+    if (SECRET_WORDS[state.boardLength].length) updateBoardSoundOptions();
+    else $("#boardSoundStatus").textContent = "Die Wortliste konnte nicht geladen werden.";
+  });
+}
+
 async function startBoardSecret() {
   const button = $("#startBoardSecret");
   button.disabled = true;
@@ -1219,19 +1281,28 @@ async function startBoardSecret() {
       return;
     }
   }
-  button.disabled = false;
+  const eligible = boardEligibleWords();
+  if (!eligible.length) {
+    updateBoardSoundOptions();
+    return;
+  }
   state.boardWord = null;
-  state.boardDeck = shuffle(SECRET_WORDS[state.boardLength]);
+  state.boardPool = eligible;
+  state.boardDeck = shuffle(eligible);
+  state.boardSpinSymbols = [...state.boardSounds];
   showScreen("board-secret-play");
   nextBoardWord();
+  button.disabled = false;
 }
 
 async function nextBoardWord() {
   $("#boardNext").hidden = true;
   if (!state.boardDeck.length) {
     await loadSecretWords().catch(() => {}); // Offline bleibt die bisherige Liste verfügbar.
-    state.boardDeck = shuffle(SECRET_WORDS[state.boardLength]);
-    if (state.boardWord && state.boardDeck[0] === state.boardWord) {
+    const eligible = boardEligibleWords();
+    if (eligible.length) state.boardPool = eligible;
+    state.boardDeck = shuffle(state.boardPool);
+    if (state.boardDeck.length > 1 && state.boardWord && state.boardDeck[0] === state.boardWord) {
       [state.boardDeck[0], state.boardDeck[1]] = [state.boardDeck[1], state.boardDeck[0]];
     }
   }
@@ -1245,7 +1316,7 @@ async function nextBoardWord() {
   $("#boardNext").hidden = true;
   const reels = $("#boardReels");
   reels.replaceChildren();
-  const tokenKeys = Object.keys(ANLAUT_SYMBOLS);
+  const tokenKeys = state.boardSpinSymbols;
   let stopped = 0;
 
   state.boardWord.slice(1).forEach((token, reelIndex) => {
@@ -1709,9 +1780,17 @@ $("#profileForm").addEventListener("submit", startPlayerProfile);
 $("#openBoardFromProfile").addEventListener("click", showBoardHome);
 $("#openBoardFromHome").addEventListener("click", showBoardHome);
 $$("[data-board-home]").forEach((button) => button.addEventListener("click", showBoardHome));
-$("#openBoardSecret").addEventListener("click", () => showScreen("board-secret-setup"));
+$("#openBoardSecret").addEventListener("click", showBoardSecretSetup);
 $("#startBoardSecret").addEventListener("click", startBoardSecret);
-$("#changeBoardLength").addEventListener("click", () => showScreen("board-secret-setup"));
+$("#changeBoardLength").addEventListener("click", showBoardSecretSetup);
+$("#boardSelectAllSounds").addEventListener("click", () => {
+  state.boardSounds = new Set(Object.keys(ANLAUT_SYMBOLS));
+  updateBoardSoundOptions();
+});
+$("#boardClearSounds").addEventListener("click", () => {
+  state.boardSounds.clear();
+  updateBoardSoundOptions();
+});
 $("#boardReveal").addEventListener("click", revealBoardWord);
 $("#boardNext").addEventListener("click", nextBoardWord);
 $("#resetProfileButton").addEventListener("click", resetPlayerProfile);
@@ -1787,6 +1866,7 @@ $$('[data-board-length]').forEach((button) => {
     $$('[data-board-length]').forEach((item) => item.classList.remove("selected"));
     button.classList.add("selected");
     state.boardLength = Number(button.dataset.boardLength);
+    updateBoardSoundOptions();
   });
 });
 

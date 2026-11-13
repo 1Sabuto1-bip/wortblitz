@@ -221,6 +221,21 @@ body.board-mode main { width: 100%; max-width: none; }
 .board-setup-card { width: min(100%, 920px); }
 .board-setup-card .level-button { min-height: 110px; }
 .board-setup-card .level-copy strong { font-size: 1.35rem; }
+.board-sound-options { margin: 26px auto 12px; padding: 17px; border: 2px solid #d6e4eb; border-radius: 20px; background: #f8fbfd; text-align: left; }
+.board-sound-options summary { color: var(--ink); font-size: 1.18rem; font-weight: 850; cursor: pointer; }
+.board-sound-options summary span { margin-left: 10px; color: var(--blue); font-size: .9rem; font-weight: 750; }
+.board-sound-options p { color: var(--muted); line-height: 1.45; }
+.board-sound-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.board-sound-actions .secondary-button { min-height: 42px; padding: 7px 15px; font-size: .92rem; }
+.board-sound-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 9px; }
+.board-sound { position: relative; display: grid; place-items: center; gap: 4px; min-height: 103px; padding: 7px; border: 3px solid #d5e0e7; border-radius: 15px; background: white; color: var(--ink); cursor: pointer; }
+.board-sound.selected { border-color: #237eaf; background: #e5f5fc; }
+.board-sound.selected::after { content: "✓"; position: absolute; top: 3px; right: 5px; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: #237eaf; color: white; font-size: .72rem; }
+.board-sound svg { width: 62px; height: 62px; }
+.board-sound strong { font-size: 1rem; line-height: 1; }
+.board-sound-status { min-height: 26px; margin: 8px 0 18px; color: #286454; font-weight: 800; }
+.board-sound-status.is-empty { color: #a3422d; }
+.board-setup-card #startBoardSecret:disabled { opacity: .48; cursor: not-allowed; box-shadow: none; }
 .board-play-screen { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding: clamp(16px, 2vw, 36px); }
 .board-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .board-toolbar-title { font-size: clamp(1.2rem, 2vw, 2rem); font-weight: 850; }
